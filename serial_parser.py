@@ -2,7 +2,7 @@ import serial
 import sys
 from datetime import datetime
 
-# port = sys.argv[1]
+port = sys.argv[1]
 
 def read_from_serial(port='COM3', baudrate=115200):
     try:
@@ -50,4 +50,4 @@ def read_from_serial(port='COM3', baudrate=115200):
         print("Port closed")
 
 if __name__ == "__main__":
-    read_from_serial(port='COM3', baudrate=115200)
+    read_from_serial(port, baudrate=115200)

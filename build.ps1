@@ -8,8 +8,7 @@ function SetEnv {
         [string] $path
     )
     
-    $idf_tools_path = "${ENV:IDF_TOOLS_PATH}/tools/$path/"
-    $compiler_path = Get-ChildItem -Directory $idf_tools_path
+    $compiler_path = Get-ChildItem -Directory $path
     $compiler_path = Get-ChildItem -Directory $compiler_path
     $compiler_path = "$compiler_path\bin"
     $currentPath = [Environment]::GetEnvironmentVariable("PATH", "User")
@@ -17,6 +16,7 @@ function SetEnv {
     {
         $updatedPath = "$currentPath;$compiler_path;"
         [Environment]::SetEnvironmentVariable("PATH", $updatedPath, "User")
+        Write-Host "Added environtment $compiler_path"
     }
 }
 
@@ -122,8 +122,10 @@ elseif ($platform -like "*ESP32*")
     $idf_path = ${ENV:IDF_PATH}
     $idf_exports = python "$idf_path/tools/activate.py" --export
     . $idf_exports
-    SetEnv("xtensa-esp-elf-gdb")
-    SetEnv("riscv32-esp-elf-gdb")
+    SetEnv("${ENV:IDF_TOOLS_PATH}/tools/xtensa-esp-elf-gdb")
+    SetEnv("${ENV:IDF_TOOLS_PATH}/tools/riscv32-esp-elf-gdb")
+    SetEnv("${ENV:IDF_TOOLS_PATH}/tools/xtensa-esp-elf")
+    SetEnv("${ENV:IDF_TOOLS_PATH}/tools/riscv32-esp-elf")
     $idf_path = $idf_path.replace('\', '/')
     cmake .. -G Ninja `
         -DCMAKE_BUILD_TYPE="${build}" `
@@ -148,9 +150,9 @@ elseif ($platform -like "*MSP430*")
         -DTARGET="$platform"
         # msp430-elf-size -A build/Template.elf
 }
-# ninja -j 8
+ninja -j 8
 Set-Location $dir
-    idf.py size
+    # idf.py size
 
 $end_time = Get-Date
 $executionTime =  $end_time - $start_time
