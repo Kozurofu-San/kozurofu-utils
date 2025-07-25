@@ -35,12 +35,19 @@ elseif ($platform -like "*SAM3*")
 }
 elseif ($platform -like "*ESP32*")
 {
-c:\Espressif\tools\openocd-esp32\v0.12.0-esp32-20241016\openocd-esp32\bin\openocd.exe `
-    -f board/esp32s3-builtin.cfg `
-    -c "gdb port $gdb" `
-    -c "tcl port $tcl_port" `
-    -c "bindto 0.0.0.0"
-    # -c 'set ESP_RTOS none'
+    $ocd_path = "${ENV:IDF_TOOLS_PATH}\tools\openocd-esp32"
+    $path = Get-ChildItem -Directory $ocd_path
+    $ocd_path = "$ocd_path\$path"
+    $path = Get-ChildItem -Directory $ocd_path
+    $ocd_path = "$ocd_path\$path\bin"
+    Write-Host "HUESOS "$ocd_path
+    Set-Location $ocd_path
+    .\openocd.exe `
+        -f board/esp32s3-builtin.cfg `
+        -c "gdb port $gdb" `
+        -c "tcl port $tcl_port" `
+        -c "bindto 0.0.0.0"
+        # -c 'set ESP_RTOS none'
 }
 elseif ($platform -like "*MSP430*")
 {
