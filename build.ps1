@@ -20,12 +20,12 @@ function SetEnv {
     }
 }
 
-if ($platform -like "*STM32F1*") {$driver = "STM32F1"}
-elseif ($platform -like "*STM32F4*") {$driver = "STM32F4"}
-elseif ($platform -like "*ATSAM3X*") {$driver = "ATSAM3X"}
-elseif ($platform -like "*PIC32MX*") {$driver = "PIC32MX"}
-elseif ($platform -like "*ESP32*") {$driver = "ESP32"}
-elseif ($platform -like "*MSP430*") {$driver = "MSP430"}
+if     ( $platform -like "*STM32F1*" ) { $driver = "STM32F1" }
+elseif ( $platform -like "*STM32F4*" ) { $driver = "STM32F4" }
+elseif ( $platform -like "*ATSAM3X*" ) { $driver = "ATSAM3X" }
+elseif ( $platform -like "*PIC32MX*" ) { $driver = "PIC32MX" }
+elseif ( $platform -like "*ESP32*"   ) { $driver = "ESP32"   }
+elseif ( $platform -like "*MSP430*"  ) { $driver = "MSP430"  }
 
 if ($platform -like "*STM32*") 
 {
