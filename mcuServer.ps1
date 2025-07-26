@@ -8,9 +8,9 @@ $tcl_port    = ($port+1).ToString()
 $telnet_port = ($port+2).ToString()
 
 
-if     ( $platform -like "*STM32F103*"  ) { $device = "STM32F103C8"     }
-elseif ( $platform -like "*STM32F407*"  ) { $device = "STM32F407VE"     }
-elseif ( $platform -like "*ATSAM3X*"    ) { $device = "ATSAM3X8E"       }
+if     ( $platform -like "*STM32F103*"  ) { $device = "STM32F103C8"     ; $cpu_frequency = 72000000  }
+elseif ( $platform -like "*STM32F407*"  ) { $device = "STM32F407VE"     ; $cpu_frequency = 168000000 }
+elseif ( $platform -like "*ATSAM3X*"    ) { $device = "ATSAM3X8E"       ; $cpu_frequency = 84000000  }
 elseif ( $platform -like "*PIC32MX*"    ) { $device = "PIC32MX440F256H" }
 elseif ( $platform -like "*ESP32"       ) { $device = "XTENSA LX6"      }
 elseif ( $platform -like "*ESP32S3"     ) { $device = "XTENSA LX7"      }
@@ -19,13 +19,13 @@ if ($platform -like "*STM32*" -or $platform -like "*SAM3*")
 {
     if ($programmer -eq "jlink")
     {
-        & $jlink_gdb -device $device -if SWD -port $gdb -swoport $tcl_port -telnetport $telnet_port
+        & $jlink_gdb -device $device -if SWD -port $gdb -swoport $tcl_port -telnetport $telnet_port -speed 4000 -if SWD
     }
     elseif ($programmer -eq "other")
     {
         openocd `
-        -f interface/jlink.cfg `
-        -f target/stm32f1x.cfg `
+        -f interface/stlink.cfg `
+        -f target/stm32f4x.cfg `
         -c "set CONNECT_UNDER_RESET 1" `
         -c "gdb port $gdb" `
         -c "tcl port $tcl_port" `

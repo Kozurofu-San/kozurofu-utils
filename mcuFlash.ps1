@@ -1,9 +1,6 @@
 param([string] $platform = "ESP32", [string] $name, [string] $server='localhost', [int] $port=2000)
 
-if ($platform -like "*STM32*")
-{
-}
-elseif ($platform -like "*ESP32*") {
+if ($platform -like "*ESP32*") {
 
     $p = Get-Process -Name openocd -ErrorAction SilentlyContinue
     if ($null -eq $p) {
@@ -28,7 +25,7 @@ elseif ($platform -like "*ESP32*") {
         . $idf_exports
         $folder = Get-Location
         $folder = $folder -replace '\\', '/'
-        xtensa-esp32-elf-gdb -batch `
+        xtensa-esp32s3-elf-gdb -batch `
         -ex "pwd" `
         -ex "target extended-remote ${server}:${port}" `
         -ex "set confirm off" `
@@ -40,7 +37,7 @@ elseif ($platform -like "*ESP32*") {
         -ex "quit"
     }
 }
-elseif ($platform -like "*SAM3*") {
+elseif ($platform -like "*SAM3*" -or $platform -like "*STM32*") {
     $folder = Get-Location
     $folder = $folder -replace '\\', '/'
     arm-none-eabi-gdb -batch `
