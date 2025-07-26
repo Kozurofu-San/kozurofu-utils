@@ -7,15 +7,16 @@ elseif ($platform -like "*ESP32*") {
 
     $p = Get-Process -Name openocd -ErrorAction SilentlyContinue
     if ($null -eq $p) {
+        $com = python $PSScriptRoot\find_com_port.py
         $dir = Get-Location
         $idf_path = ${ENV:IDF_PATH}
         $idf_path = $idf_path.replace('\', '/')
         Set-Location $idf_path
         ./export.ps1
         Set-Location $dir
-        # idf.py -p COM3 flash
+        # idf.py -p $com flash
         python -m esptool `
-            -p COM3 `
+            -p $com `
             -b 460800 `
             --before default_reset `
             --after hard_reset write_flash `

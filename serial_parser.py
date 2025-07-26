@@ -1,29 +1,9 @@
 import serial
 import sys
 from datetime import datetime
-import serial.tools.list_ports
-import numpy as np
+import find_com_port
 
 baudrate = sys.argv[1]
-
-def find_com_port_by_vid_pid(target_vid, target_pid):
-    """
-    Finds the COM port of a device given its Vendor ID (VID) and Product ID (PID).
-
-    Args:
-        target_vid (int): The Vendor ID of the target device.
-        target_pid (int): The Product ID of the target device.
-
-    Returns:
-        str or None: The COM port name (e.g., 'COM3', '/dev/ttyUSB0') if found,
-                     otherwise None.
-    """
-    ports = serial.tools.list_ports.comports()
-    for port in ports:
-        for i in range(0, target_vid.size):
-            if port.vid == target_vid[i] and port.pid == target_pid[i]:
-                return port.device, i
-    return None
 
 def read_from_serial(port='COM3', baudrate=115200):
     try:
@@ -72,14 +52,10 @@ def read_from_serial(port='COM3', baudrate=115200):
 
 if __name__ == "__main__":
 
-    dev = np.array(["ESP32 JTAG" , "CH340" ])
-    vid = np.array([0x303A       , 0x1A86  ], dtype=int)
-    pid = np.array([0x1001       , 0x55D3  ], dtype=int)
-
-    com_port, n = find_com_port_by_vid_pid(vid, pid)
+    com_port, dev, vid, pid = find_com_port.find_com_port()
 
     if com_port:
-        print(f"Serial device {dev[n]} (VID: {hex(vid[n])} PID: {hex(pid[n])}) found on port: {com_port}")
+        print(f"Serial device {dev} (VID: {hex(vid)} PID: {hex(pid)}) found on port: {com_port}")
     else:
         print(f"Serial device not found.")
 
