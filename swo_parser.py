@@ -146,6 +146,7 @@ class StreamManager:
 # Set up the socket to the OpenOCD Tcl server
 HOST = sys.argv[1]
 PORT = sys.argv[2]
+
 print("\033[95m {}\033[00m" .format("Logger started"))
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcl_socket:
     tcl_socket.connect((HOST, int(PORT)))

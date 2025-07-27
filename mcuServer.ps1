@@ -1,4 +1,4 @@
-param([string] $platform = "ESP32", [string] $programmer, [int] $cpu_frequency = 72000000, [int] $port = 2000)
+param([string] $platform = "ESP32", [string] $programmer, [int] $port = 2000)
 
 $jlink_gdb = "C:/Program Files/SEGGER/JLink/JLinkGDBServerCL.exe"
 Stop-Process -Name openocd -ErrorAction SilentlyContinue
@@ -8,9 +8,9 @@ $tcl_port    = ($port+1).ToString()
 $telnet_port = ($port+2).ToString()
 
 
-if     ( $platform -like "*STM32F103*"  ) { $device = "STM32F103C8"     ; $cpu_frequency = 72000000  }
-elseif ( $platform -like "*STM32F407*"  ) { $device = "STM32F407VE"     ; $cpu_frequency = 168000000 }
-elseif ( $platform -like "*ATSAM3X*"    ) { $device = "ATSAM3X8E"       ; $cpu_frequency = 84000000  }
+if     ( $platform -like "*STM32F103*"  ) { $device = "STM32F103C8"     ; $cfg = "stm32f1x"   ; $cpu_frequency = 72000000  }
+elseif ( $platform -like "*STM32F407*"  ) { $device = "STM32F407VE"     ; $cfg = "stm32f4x"   ; $cpu_frequency = 168000000 }
+elseif ( $platform -like "*ATSAM3X*"    ) { $device = "ATSAM3X8E"       ; $cfg = "at91sam3XXX"; $cpu_frequency = 84000000  }
 elseif ( $platform -like "*PIC32MX*"    ) { $device = "PIC32MX440F256H" }
 elseif ( $platform -like "*ESP32"       ) { $device = "XTENSA LX6"      }
 elseif ( $platform -like "*ESP32S3"     ) { $device = "XTENSA LX7"      }
@@ -25,7 +25,7 @@ if ($platform -like "*STM32*" -or $platform -like "*SAM3*")
     {
         openocd `
         -f interface/stlink.cfg `
-        -f target/stm32f4x.cfg `
+        -f target/$cfg.cfg `
         -c "set CONNECT_UNDER_RESET 1" `
         -c "gdb port $gdb" `
         -c "tcl port $tcl_port" `

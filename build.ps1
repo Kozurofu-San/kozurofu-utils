@@ -94,7 +94,6 @@ if ($platform -like "*STM32*")
         -DPLATFORM_DRIVER="${driver}" `
         -DCMAKE_PROJECT_NAME="${project}" `
         -DCMAKE_SYSTEM_NAME=Generic `
-        -DCMAKE_BUILD_PARALLEL_LEVEL=8 `
         -DTARGET="$platform"
 }
 elseif ($platform -like "*ATSAM*")
@@ -104,7 +103,6 @@ elseif ($platform -like "*ATSAM*")
         -DPLATFORM_DRIVER="${driver}" `
         -DCMAKE_PROJECT_NAME="${project}" `
         -DCMAKE_SYSTEM_NAME=Generic `
-        -DCMAKE_BUILD_PARALLEL_LEVEL=8 `
         -DTARGET="$platform"
 }
 elseif ($platform -like "*PIC32MX*")
@@ -114,7 +112,6 @@ elseif ($platform -like "*PIC32MX*")
         -DPLATFORM_DRIVER="${driver}" `
         -DCMAKE_PROJECT_NAME="${project}" `
         -DCMAKE_SYSTEM_NAME=Generic `
-        -DCMAKE_BUILD_PARALLEL_LEVEL=8 `
         -DTARGET="$platform"
 }
 elseif ($platform -like "*ESP32*")
@@ -133,7 +130,6 @@ elseif ($platform -like "*ESP32*")
         -DCMAKE_PROJECT_NAME="${project}" `
         -DPYTHON="python" `
         -DCMAKE_SYSTEM_NAME=Generic `
-        -DCMAKE_BUILD_PARALLEL_LEVEL=8 `
         -DTARGET="$platform" `
         -DCMAKE_TOOLCHAIN_FILE="${idf_path}/tools/cmake/toolchain-${platform}.cmake" `
         -DESP_PLATFORM=1 `
@@ -146,7 +142,6 @@ elseif ($platform -like "*MSP430*")
         -DPLATFORM_DRIVER="${driver}" `
         -DCMAKE_PROJECT_NAME="${project}" `
         -DCMAKE_SYSTEM_NAME=Generic `
-        -DCMAKE_BUILD_PARALLEL_LEVEL=8 `
         -DTARGET="$platform"
         # msp430-elf-size -A build/Template.elf
 }
