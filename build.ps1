@@ -1,4 +1,4 @@
-param([string] $build, [string] $project, [string] $platform = "STM32F103")
+param([string] $build, [string] $project, [string] $platform = "STM32F103", [int] $log)
 
 $start_time = Get-Date
 $driver = ""
@@ -94,6 +94,7 @@ if ($platform -like "*STM32*")
         -DPLATFORM_DRIVER="${driver}" `
         -DCMAKE_PROJECT_NAME="${project}" `
         -DCMAKE_SYSTEM_NAME=Generic `
+        -DLOG="${log}" `
         -DTARGET="$platform"
 }
 elseif ($platform -like "*ATSAM*")
