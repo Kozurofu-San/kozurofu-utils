@@ -146,7 +146,7 @@ elseif ($platform -like "*MSP430*")
         -DTARGET="$platform"
         # msp430-elf-size -A build/Template.elf
 }
-ninja -j 8
+ninja -j16
 Set-Location $dir
     # idf.py size
 
