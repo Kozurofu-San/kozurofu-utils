@@ -152,4 +152,4 @@ Set-Location $dir
 
 $end_time = Get-Date
 $executionTime =  $end_time - $start_time
-Write-Host "Build completed in $($executionTime.ToString("m':'ss\.fff"))"
+Write-Host "Time elapsed $($executionTime.ToString("m':'ss\.fff"))"
