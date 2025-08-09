@@ -43,6 +43,7 @@ cmake .. -G Ninja `
     -DSDL2_DIR="$filePath" `
     -DCMAKE_SYSTEM_NAME=Generic `
     -DTARGET="Simulator" `
+    -DSIMULATOR=1 `
     -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake" `
     -DCMAKE_C_COMPILER="$compilerPath/gcc.exe" `
     -DCMAKE_ASM_COMPILER="$compilerPath/gcc.exe" `
@@ -50,8 +51,9 @@ cmake .. -G Ninja `
     -DCMAKE_LINKER="$compilerPath/g++.exe"
 
 ninja -j16
-$lddPath = "C:\msys64\usr\bin"
-& $lddPath\ldd.exe $dir/$build_folder/main.exe
+# $lddPath = "C:\msys64\usr\bin"
+# & $lddPath\ldd.exe $dir/$build_folder/main.exe
+& $compilerPath/size.exe --format=GNU $dir/$build_folder/main.exe
 Set-Location $dir
 
 $end_time = Get-Date
