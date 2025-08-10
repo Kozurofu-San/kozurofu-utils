@@ -1,29 +1,30 @@
 param([string] $build = "Debug")
 
 $start_time = Get-Date
-
-$filePath = "C:/vcpkg"
-if (-not (Test-Path -Path $filePath))
-{
-    Write-Host "Installation vcpkg"
-    git clone https://github.com/microsoft/vcpkg.git "C:/"
-    Set-Location $filePath
-    ./bootstrap-vcpkg.bat
-    ./vcpkg.exe install sdl2 --triplet x64-mingw-static --host-triplet x64-mingw-static
-}
-
-$filePath = "C:/vcpkg/packages/sdl2_x64-mingw-static/share/sdl2"
-if (-not (Test-Path -Path $filePath))
-{
-    Write-Error "$filePath not found"
-    exit 1
-}
+$dir = Get-Location
 
 $compilerPath = "C:\msys64\ucrt64\bin"
 if (-not (Test-Path -Path $compilerPath))
 {
     Write-Error "Compiler at $compilerPath not found"
     exit 1
+}
+$env:PATH=";$compilerPath;$env:PATH"
+
+$filePath = "C:/vcpkg"
+if (-not (Test-Path -Path $filePath))
+{
+    Write-Host "Installation vcpkg"
+    git clone https://github.com/microsoft/vcpkg.git "C:/vcpkg"
+}
+
+$filePath = "C:/vcpkg/packages/sdl2_x64-mingw-static/share/sdl2"
+if (-not (Test-Path -Path $filePath))
+{
+    Write-Host "Installation sdl2"
+    Set-Location "C:/vcpkg"
+    ./bootstrap-vcpkg.bat
+    ./vcpkg.exe install sdl2 --triplet x64-mingw-static --host-triplet x64-mingw-static
 }
 
 # $path = Resolve-Path -Path "./lv_port_pc_vscode"
