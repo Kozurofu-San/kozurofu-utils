@@ -84,12 +84,13 @@ if (-not(Test-Path -Path $build_folder)) {
 }
 $dir = Get-Location
 Set-Location $build_folder
-# cmake -LAH
-# cmake --trace .
-# cmake --debug-output .
+
+if ($env:Path -notlike "*C:\msys64\mingw64\bin*") { $env:Path += ";C:\msys64\mingw64\bin" }     # Ninja
+if ($env:Path -notlike "*C:\msys64\usr\bin*") { $env:Path += ";C:\msys64\usr\bin" }             # make
+
 if ($platform -like "*STM32*")
 {
-    cmake .. -G Ninja `
+    cmake .. -G "Ninja" `
         -DCMAKE_BUILD_TYPE="${build}" `
         -DPLATFORM_DRIVER="${driver}" `
         -DCMAKE_PROJECT_NAME="${project}" `
@@ -147,8 +148,9 @@ elseif ($platform -like "*MSP430*")
         # msp430-elf-size -A build/Template.elf
 }
 ninja -j16
+# make -j32
 Set-Location $dir
-    # idf.py size
+# idf.py size
 
 $end_time = Get-Date
 $executionTime =  $end_time - $start_time
