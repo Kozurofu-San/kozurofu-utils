@@ -1,13 +1,25 @@
-param([string] $script='mcuContinue', [string] $server='localhost', [string] $platform, [int] $port=2000)
+param([string] $script='mcuContinue', [string] $server='localhost', [string] $platform, [int] $port=2000, [string] $programmer)
 
 $mcuReset = {
-	param([string] $server, [string] $port, [string] $gdb)
+	param([string] $server, [string] $port, [string] $gdb, [string] $programmer)
 	Write-Host "Reset MCU"
-	& $gdb -batch `
-	-ex "target extended-remote ${server}:${port}" `
-	-ex "monitor reset" `
-	-ex "set confirm off" `
-	-ex "quit"
+	if ($programmer -eq "jlink")
+	{
+		& $gdb -batch `
+		-ex "target extended-remote ${server}:${port}" `
+		-ex "monitor reset" `
+		-ex "set confirm off" `
+		-ex "quit"
+	}
+	else
+	{
+		& $gdb -batch `
+		-ex "target extended-remote ${server}:${port}" `
+		-ex "monitor reset" `
+		-ex "monitor go" `
+		-ex "set confirm off" `
+		-ex "quit"
+	}
 }
 
 $mcuStop = {
@@ -21,13 +33,24 @@ $mcuStop = {
 }
 
 $mcuContinue = {
-	param([string] $server, [string] $port, [string] $gdb)
+	param([string] $server, [string] $port, [string] $gdb, [string] $programmer)
 	Write-Host "Continue MCU"
-	& $gdb -batch `
-	-ex "target extended-remote ${server}:${port}" `
-	-ex "monitor resume" `
-	-ex "set confirm off" `
-	-ex "quit"
+	if ($programmer -eq "jlink")
+	{
+		& $gdb -batch `
+		-ex "target extended-remote ${server}:${port}" `
+		-ex "monitor go" `
+		-ex "set confirm off" `
+		-ex "quit"
+	}
+	else
+	{
+		& $gdb -batch `
+		-ex "target extended-remote ${server}:${port}" `
+		-ex "monitor resume" `
+		-ex "set confirm off" `
+		-ex "quit"
+	}
 }
 
 function Get-File($initialDirectory) {   
@@ -40,12 +63,14 @@ function Get-File($initialDirectory) {
 }
 
 $mcuLoad = {
-	param([string] $server, [string] $port, [string] $gdb)
+	param([string] $server, [string] $port, [string] $gdb, [string] $programmer)
 	# openocd -f interface\\stlink.cfg -f target\\stm32f7x.cfg -c "program C:/BL.bin verify reset exit  0x08000000"
-	$path = Resolve-Path -Path "../build"
+	$path = "$PSScriptRoot/../../build/"
+	$path = $path.Replace('\','/')
 
 	$file = Get-File $path
 	$file = $file.Replace('\','/')
+	Write-Host $file $path
 
 	arm-none-eabi-objcopy --input-target=binary --output-target=elf32-little $file $path'data.elf'
 	arm-none-eabi-gdb ${path}'data.elf' -batch `
@@ -53,19 +78,34 @@ $mcuLoad = {
 	-ex "set confirm off" `
 	-ex "load ${path}data.elf 0x08000000" `
 	-ex "monitor reset" `
+	-ex "monitor go" `
 	-ex "quit"
 	Remove-Item ${path}'data.elf'
 }
 
 $mcuErase = {
-	param([string] $server, [string] $port, [string] $gdb)
+	param([string] $server, [string] $port, [string] $gdb, [string] $programmer)
 	# openocd -f interface\\stlink.cfg -f target\\stm32f7x.cfg -c "flash init; init; reset halt; flash erase_sector 0 0 0; exit"
-	& $gdb -batch `
-	-ex "target extended-remote ${server}:${port}" `
-	-ex "monitor flash erase_sector 0 0 last" `
-	-ex "set confirm off" `
-	-ex "quit" `
-	program --arg --another
+	
+	if ($programmer -eq "jlink")
+	{
+		& $gdb -batch `
+		-ex "target extended-remote ${server}:${port}" `
+		-ex "monitor flash erase 0x08000000" `
+		-ex "monitor reset" `
+		-ex "set confirm off" `
+		-ex "quit" `
+		program --arg --another
+	}
+	else
+	{
+		& $gdb -batch `
+		-ex "target extended-remote ${server}:${port}" `
+		-ex "monitor flash erase_sector 0 0 last" `
+		-ex "set confirm off" `
+		-ex "quit" `
+		program --arg --another
+	}
 }
 
 $gdb = ""
@@ -75,8 +115,8 @@ elseif ($platform -like "*MSP4340*")                           { $gdb = ""      
 elseif ($platform -like "*PIC32*")                             { $gdb = ""                     }
 elseif ($platform -like "*AVR*")                               { $gdb = ""                     }
 
-if ($script -match 'mcuReset') 		{Invoke-Command -ScriptBlock $mcuReset 		-ArgumentList $server, $port, $gdb}
-if ($script -match 'mcuContinue') 	{Invoke-Command -ScriptBlock $mcuContinue	-ArgumentList $server, $port, $gdb}
+if ($script -match 'mcuReset') 		{Invoke-Command -ScriptBlock $mcuReset 		-ArgumentList $server, $port, $gdb, $programmer}
+if ($script -match 'mcuContinue') 	{Invoke-Command -ScriptBlock $mcuContinue	-ArgumentList $server, $port, $gdb, $programmer}
 if ($script -match 'mcuStop') 		{Invoke-Command -ScriptBlock $mcuStop 		-ArgumentList $server, $port, $gdb}
-if ($script -match 'mcuLoad') 		{Invoke-Command -ScriptBlock $mcuLoad 		-ArgumentList $server, $port, $gdb}
-if ($script -match 'mcuErase') 		{Invoke-Command -ScriptBlock $mcuErase 		-ArgumentList $server, $port, $gdb}
+if ($script -match 'mcuLoad') 		{Invoke-Command -ScriptBlock $mcuLoad 		-ArgumentList $server, $port, $gdb, $programmer}
+if ($script -match 'mcuErase') 		{Invoke-Command -ScriptBlock $mcuErase 		-ArgumentList $server, $port, $gdb, $programmer}

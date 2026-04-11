@@ -6,7 +6,7 @@ Stop-Process -Name openocd -ErrorAction SilentlyContinue
 $gdb         = $port.ToString()
 $tcl_port    = ($port+1).ToString()
 $telnet_port = ($port+2).ToString()
-
+Write-Host "`$programmer $programmer"
 
 if     ( $platform -like "*STM32F103*"  ) { $device = "STM32F103C8"     ; $cfg = "stm32f1x"   ; $cpu_frequency = 72000000  }
 elseif ( $platform -like "*STM32F407*"  ) { $device = "STM32F407VE"     ; $cfg = "stm32f4x"   ; $cpu_frequency = 168000000 }
@@ -19,7 +19,7 @@ if ($platform -like "*STM32*" -or $platform -like "*SAM3*")
 {
     if ($programmer -eq "jlink")
     {
-        & $jlink_gdb -device $device -if SWD -port $gdb -swoport $tcl_port -telnetport $telnet_port -speed 10000
+        & $jlink_gdb -device $device -if SWD -port $gdb -swoport $tcl_port -telnetport $telnet_port -speed 1000 -nolocalhostonly
     }
     elseif ($programmer -eq "other")
     {
