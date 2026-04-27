@@ -19,7 +19,7 @@ if ($platform -like "*STM32*" -or $platform -like "*SAM3*")
 {
     if ($programmer -eq "jlink")
     {
-        & $jlink_gdb -device $device -if SWD -port $gdb -swoport $tcl_port -telnetport $telnet_port -speed 1000 -nolocalhostonly
+        & $jlink_gdb -device $device -if SWD -port $gdb -swoport $tcl_port -telnetport $telnet_port -speed 1000 -nolocalhostonly -nohalt
     }
     elseif ($programmer -eq "other")
     {
