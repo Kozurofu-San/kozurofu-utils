@@ -1,8 +1,4 @@
-# $dir = Get-Location
-Set-Location ${ENV:IDF_PATH}
-./export.ps1
-$dir = split-path -parent $MyInvocation.MyCommand.Definition
-Set-Location $dir
-Set-Location ..
+& "${ENV:IDF_PATH}/export.ps1"
+Set-Location "$PSScriptRoot/../../"
 idf.py menuconfig
 pause

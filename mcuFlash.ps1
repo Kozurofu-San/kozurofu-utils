@@ -5,18 +5,13 @@ if ($platform -like "*ESP32*") {
     $p = Get-Process -Name openocd -ErrorAction SilentlyContinue
     if ($null -eq $p) {
         $com = python $PSScriptRoot\find_com_port.py
-        $dir = Get-Location
-        $idf_path = ${ENV:IDF_PATH}
-        $idf_path = $idf_path.replace('\', '/')
-        Set-Location $idf_path
-        ./export.ps1
-        Set-Location $dir
+        # & "${ENV:IDF_PATH}/export.ps1"
         # idf.py -p $com flash
-        python -m esptool `
+        python.exe -m esptool `
             -p $com `
             -b 460800 `
-            --before default_reset `
-            --after hard_reset write_flash `
+            --before default-reset `
+            --after hard-reset write-flash `
             0x0000 build/bootloader/bootloader.bin `
             0x8000 build/partition_table/partition-table.bin `
             0x10000 build/Template.bin
@@ -25,7 +20,11 @@ if ($platform -like "*ESP32*") {
         . $idf_exports
         $folder = Get-Location
         $folder = $folder -replace '\\', '/'
-        xtensa-esp32s3-elf-gdb -batch `
+        $gdb = "riscv32-esp-elf-gdb"
+        if ($platform -match "ESP32" -or $platform -match "ESP32S2" -or $platform -match "ESP32S3") {
+            $gdb = "xtensa-$($platform.ToLower())-elf-gdb"
+        }
+        & $gdb -batch `
         -ex "pwd" `
         -ex "target extended-remote ${server}:${port}" `
         -ex "set confirm off" `

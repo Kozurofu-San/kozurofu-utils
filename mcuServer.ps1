@@ -45,7 +45,7 @@ elseif ($platform -like "*ESP32*")
     }
     elseif ($programmer -eq "other")
     {
-        $ocd_path = "${ENV:IDF_TOOLS_PATH}\tools\openocd-esp32"
+        $ocd_path = "$HOME\.espressif\tools\openocd-esp32"
         $path = Get-ChildItem -Directory $ocd_path
         $ocd_path = "$ocd_path\$path"
         $path = Get-ChildItem -Directory $ocd_path

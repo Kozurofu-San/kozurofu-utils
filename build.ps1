@@ -1,4 +1,4 @@
-param([string] $build, [string] $project, [string] $platform = "STM32F103", [int] $log)
+param([string] $build, [string] $project, [string] $platform = "ESP32", [int] $log)
 
 $start_time = Get-Date
 $driver = ""
@@ -118,14 +118,19 @@ elseif ($platform -like "*PIC32MX*")
 }
 elseif ($platform -like "*ESP32*")
 {
-    $idf_path = ${ENV:IDF_PATH}
-    $idf_exports = python "$idf_path/tools/activate.py" --export
-    . $idf_exports
-    SetEnv("${ENV:IDF_TOOLS_PATH}/tools/xtensa-esp-elf-gdb")
-    SetEnv("${ENV:IDF_TOOLS_PATH}/tools/riscv32-esp-elf-gdb")
-    SetEnv("${ENV:IDF_TOOLS_PATH}/tools/xtensa-esp-elf")
-    SetEnv("${ENV:IDF_TOOLS_PATH}/tools/riscv32-esp-elf")
-    $idf_path = $idf_path.replace('\', '/')
+    $idf_exports = python "${ENV:IDF_PATH}/tools/activate.py" --export
+    try {
+        . $idf_exports
+    }
+    catch {
+        Write-Host $idf_exports
+        Write-Warning "No IDF exports"
+        exit 0
+    }
+    SetEnv("$HOME/.espressif/tools/xtensa-esp-elf-gdb")
+    SetEnv("$HOME/.espressif/tools/riscv32-esp-elf-gdb")
+    SetEnv("$HOME/.espressif/tools/xtensa-esp-elf")
+    SetEnv("$HOME/.espressif/tools/riscv32-esp-elf")
     cmake .. -G Ninja `
         -DCMAKE_BUILD_TYPE="${build}" `
         -DPLATFORM_DRIVER="${driver}" `
@@ -133,7 +138,7 @@ elseif ($platform -like "*ESP32*")
         -DPYTHON="python" `
         -DCMAKE_SYSTEM_NAME=Generic `
         -DTARGET="$platform" `
-        -DCMAKE_TOOLCHAIN_FILE="${idf_path}/tools/cmake/toolchain-${platform}.cmake" `
+        -DCMAKE_TOOLCHAIN_FILE="${ENV:IDF_PATH}/tools/cmake/toolchain-${platform}.cmake" `
         -DESP_PLATFORM=1 `
         -DSDKCONFIG="c:/Users/Kozurofu/Documents/hello_world/sdkconfig"
 }

@@ -72,15 +72,63 @@ $mcuLoad = {
 	$file = $file.Replace('\','/')
 	Write-Host $file $path
 
-	arm-none-eabi-objcopy --input-target=binary --output-target=elf32-little $file $path'data.elf'
-	arm-none-eabi-gdb ${path}'data.elf' -batch `
-	-ex "target extended-remote ${server}:${port}" `
-	-ex "set confirm off" `
-	-ex "load ${path}data.elf 0x08000000" `
-	-ex "monitor reset" `
-	-ex "monitor go" `
-	-ex "quit"
-	Remove-Item ${path}'data.elf'
+	if ($gdb -like "*arm*")
+	{
+		arm-none-eabi-objcopy --input-target=binary --output-target=elf32-little $file $path'data.elf'
+		& $gdb ${path}'data.elf' -batch `
+		-ex "target extended-remote ${server}:${port}" `
+		-ex "set confirm off" `
+		-ex "load ${path}data.elf 0x08000000" `
+		-ex "monitor reset" `
+		-ex "quit"
+		Remove-Item ${path}'data.elf'
+	}
+	elseif ($gdb -like "*esp*")
+	{
+		if ($file -like "*bootloader.bin")
+		{
+			& $gdb -batch `
+			-ex "pwd" `
+			-ex "target extended-remote ${server}:${port}" `
+			-ex "set confirm off" `
+			-ex "monitor reset halt" `
+			-ex "mon program_esp $file 0x0000 verify" `
+			-ex "monitor reset" `
+			-ex "quit"
+		}
+		elseif ($file -like "*partition-table.bin")
+		{
+			& $gdb -batch `
+			-ex "pwd" `
+			-ex "target extended-remote ${server}:${port}" `
+			-ex "set confirm off" `
+			-ex "monitor reset halt" `
+			-ex "mon program_esp $file 0x8000 verify" `
+			-ex "monitor reset" `
+			-ex "quit"
+		}
+		else
+		{
+			& $gdb -batch `
+			-ex "pwd" `
+			-ex "target extended-remote ${server}:${port}" `
+			-ex "set confirm off" `
+			-ex "monitor reset halt" `
+			-ex "mon program_esp $file 0x10000 verify" `
+			-ex "monitor reset" `
+			-ex "quit"
+		}
+		# & $gdb -batch `
+        # -ex "pwd" `
+        # -ex "target extended-remote ${server}:${port}" `
+        # -ex "set confirm off" `
+        # -ex "monitor reset halt" `
+        # -ex "mon program_esp $folder/build/bootloader/bootloader.bin 0x0000 verify" `
+        # -ex "mon program_esp $folder/build/partition_table/partition-table.bin 0x8000 verify" `
+        # -ex "mon program_esp $file 0x10000 verify" `
+        # -ex "monitor reset" `
+        # -ex "quit"
+	}
 }
 
 $mcuErase = {
@@ -109,11 +157,14 @@ $mcuErase = {
 }
 
 $gdb = ""
-if     ($platform -like "*STM32*" -or $platform -like "*SAM*") { $gdb = "arm-none-eabi-gdb"    }
-elseif ($platform -like "*ESP32*")                             { $gdb = "xtensa-esp32-elf-gdb" }
-elseif ($platform -like "*MSP4340*")                           { $gdb = ""                     }
-elseif ($platform -like "*PIC32*")                             { $gdb = ""                     }
-elseif ($platform -like "*AVR*")                               { $gdb = ""                     }
+if     ($platform -like "*STM32*" -or $platform -like "*SAM*") { $gdb = "arm-none-eabi-gdb"      }
+elseif ($platform -eq "ESP32"      )                           { $gdb = "xtensa-esp32-elf-gdb"   }
+elseif ($platform -eq "ESP32S2"    )                           { $gdb = "xtensa-esp32s2-elf-gdb" }
+elseif ($platform -eq "ESP32S3"    )                           { $gdb = "xtensa-esp32s3-elf-gdb" }
+elseif ($platform -like "*ESP32*"  )                           { $gdb = "riscv32-esp-elf-gdb"    }
+elseif ($platform -like "*MSP430*" )                           { $gdb = "msp430-elf-gdb"         }
+elseif ($platform -like "*PIC32*"  )                           { $gdb = ""                       }
+elseif ($platform -like "*AVR*"    )                           { $gdb = ""                       }
 
 if ($script -match 'mcuReset') 		{Invoke-Command -ScriptBlock $mcuReset 		-ArgumentList $server, $port, $gdb, $programmer}
 if ($script -match 'mcuContinue') 	{Invoke-Command -ScriptBlock $mcuContinue	-ArgumentList $server, $port, $gdb, $programmer}
