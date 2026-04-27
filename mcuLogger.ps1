@@ -10,7 +10,7 @@ elseif ( $platform -like "*PIC32MX*"    ) { $device = "PIC32MX440F256H" }
 if ($platform -like "*STM32*" -or $platform -like "*SAM*") {
     if ($programmer -eq "jlink")
     {
-        & $jlink_swo -device $device -cpufreq $cpuFrequency -swofreq 2250000 -itmmask 0xF
+        & $jlink_swo -device $device -cpufreq $cpuFrequency -swofreq 2250000 -itmmask 0xF -outputfile "../../build/run.log"
     }
     else
     {
