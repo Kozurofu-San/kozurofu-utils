@@ -1,4 +1,5 @@
 & "${ENV:IDF_PATH}/export.ps1"
-Set-Location "$PSScriptRoot/../../"
-idf.py menuconfig
+# idf.py menuconfig
+Set-Location "$PSScriptRoot/../../build"
+ninja menuconfig
 pause

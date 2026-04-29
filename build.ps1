@@ -154,6 +154,7 @@ elseif ($platform -like "*MSP430*")
 }
 ninja -j16
 # make -j32
+if ($platform -like "*ESP32*") { ninja size }
 Set-Location $dir
 # idf.py size
 
