@@ -4,7 +4,7 @@ if ($platform -like "*ESP32*") {
 
     $p = Get-Process -Name openocd -ErrorAction SilentlyContinue
     if ($null -eq $p) {
-        stop-process -name python
+        Get-Process -Name "python" -ErrorAction SilentlyContinue | Stop-Process -Force
         $com = python $PSScriptRoot\find_com_port.py
         # & "${ENV:IDF_PATH}/export.ps1"
         # idf.py -p $com flash
