@@ -105,6 +105,7 @@ elseif ($platform -like "*ATSAM*")
         -DPLATFORM_DRIVER="${driver}" `
         -DCMAKE_PROJECT_NAME="${project}" `
         -DCMAKE_SYSTEM_NAME=Generic `
+        -DLOG="${log}" `
         -DTARGET="$platform"
 }
 elseif ($platform -like "*PIC32MX*")
@@ -140,6 +141,7 @@ elseif ($platform -like "*ESP32*")
         -DTARGET="$platform" `
         -DCMAKE_TOOLCHAIN_FILE="${ENV:IDF_PATH}/tools/cmake/toolchain-${platform}.cmake" `
         -DESP_PLATFORM=1 `
+        -DLOG="${log}" `
         -DSDKCONFIG="c:/Users/Kozurofu/Documents/hello_world/sdkconfig"
 }
 elseif ($platform -like "*MSP430*")
