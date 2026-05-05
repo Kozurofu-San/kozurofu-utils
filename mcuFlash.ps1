@@ -10,7 +10,7 @@ if ($platform -like "*ESP32*") {
         # idf.py -p $com flash
         python.exe -m esptool `
             -p $com `
-            -b 460800 `
+            -b 921600 `
             --before default-reset `
             --after hard-reset write-flash `
             0x0000 build/bootloader/bootloader.bin `
@@ -22,7 +22,8 @@ if ($platform -like "*ESP32*") {
         $folder = Get-Location
         $folder = $folder -replace '\\', '/'
         $gdb = "riscv32-esp-elf-gdb"
-        if ($platform -match "ESP32" -or $platform -match "ESP32S2" -or $platform -match "ESP32S3") {
+        if ($platform -match "ESP32" -or $platform -match "ESP32S2" -or $platform -match "ESP32S3")
+        {
             $gdb = "xtensa-$($platform.ToLower())-elf-gdb"
         }
         & $gdb -batch `
