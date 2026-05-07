@@ -6,15 +6,14 @@ Stop-Process -Name openocd -ErrorAction SilentlyContinue
 $gdb         = $port.ToString()
 $tcl_port    = ($port+1).ToString()
 $telnet_port = ($port+2).ToString()
-Write-Host "`$programmer $programmer"
 
 if     ( $platform -like "*STM32F103*"  ) { $device = "STM32F103C8"     ; $cfg = "stm32f1x"   ; $cpu_frequency = 72000000  }
 elseif ( $platform -like "*STM32F407*"  ) { $device = "STM32F407VE"     ; $cfg = "stm32f4x"   ; $cpu_frequency = 168000000 }
 elseif ( $platform -like "*ATSAM3X*"    ) { $device = "ATSAM3X8E"       ; $cfg = "at91sam3XXX"; $cpu_frequency = 84000000  }
-elseif ( $platform -like "*PIC32MX*"    ) { $device = "PIC32MX440F256H" }
-elseif ( $platform -like "*ESP32"       ) { $device = "XTENSA LX6"      ; $cfg = "esp32-bridge"}
-elseif ( $platform -like "*ESP32S3"     ) { $device = "XTENSA LX7"      ; $cfg = "esp32s3-builtin"}
-elseif ( $platform -like "*ESP32P4"     ) { $device = "RISCV"           ; $cfg = "esp32p4-builtin"}
+elseif ( $platform -like "*PIC32MX*"    ) { $device = "PIC32MX440F256H" ; $cfg = ""                                        }
+elseif ( $platform -like "*ESP32"       ) { $device = "XTENSA LX6"      ; $cfg = "esp32-bridge"                            }
+elseif ( $platform -like "*ESP32S3"     ) { $device = "XTENSA LX7"      ; $cfg = "esp32s3-builtin"                         }
+elseif ( $platform -like "*ESP32P4"     ) { $device = "RISCV"           ; $cfg = "esp32p4-builtin"                         }
 
 if ($platform -like "*STM32*" -or $platform -like "*SAM3*")
 {
@@ -52,13 +51,14 @@ elseif ($platform -like "*ESP32*")
         $path = Get-ChildItem -Directory $ocd_path
         $ocd_path = "$ocd_path\$path\bin"
         Set-Location $ocd_path
+        # Set-Location "C:\openocd\bin"
         .\openocd.exe `
             -f board/$cfg.cfg `
             -c "gdb port $gdb" `
             -c "tcl port $tcl_port" `
             -c "telnet port $telnet_port" `
             -c "bindto 0.0.0.0"
-            # -c 'set ESP_RTOS none'
+            # -c "set _RTOS none" `   # target/esp_common.cfg -> set _RTOS "none"/"hwthread"
     }
 }
 elseif ($platform -like "*MSP430*")

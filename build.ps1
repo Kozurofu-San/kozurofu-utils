@@ -154,8 +154,24 @@ elseif ($platform -like "*MSP430*")
         -DTARGET="$platform"
         # msp430-elf-size -A build/Template.elf
 }
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "CMake failed" -ForegroundColor Red
+    Remove-Item -Path "$PSScriptRoot/../../build/Template.bin" -ErrorAction SilentlyContinue
+    Remove-Item -Path "$PSScriptRoot/../../build/Template.elf" -ErrorAction SilentlyContinue
+    exit 1
+}
+
 ninja -j16
 # make -j32
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Ninja failed" -ForegroundColor Red
+    Remove-Item -Path "$PSScriptRoot/../../build/Template.bin" -ErrorAction SilentlyContinue
+    Remove-Item -Path "$PSScriptRoot/../../build/Template.elf" -ErrorAction SilentlyContinue
+    exit 1
+}
+
 if ($platform -like "*ESP32*") { ninja size }
 Set-Location $dir
 # idf.py size
