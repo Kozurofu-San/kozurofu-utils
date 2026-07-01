@@ -1,4 +1,4 @@
-param([string] $platform = "ESP32", [string] $programmer, [int] $port = 2000)
+param([string] $platform = "ATSAM3X", [string] $programmer = "jlink", [int] $port = 2000)
 
 $jlink_gdb = "C:/Program Files/SEGGER/JLink/JLinkGDBServerCL.exe"
 Stop-Process -Name openocd -ErrorAction SilentlyContinue
@@ -19,7 +19,7 @@ if ($platform -like "*STM32*" -or $platform -like "*SAM3*")
 {
     if ($programmer -eq "jlink")
     {
-        & $jlink_gdb -device $device -if SWD -port $gdb -swoport $tcl_port -telnetport $telnet_port -speed 1000 -nolocalhostonly -nohalt
+        & $jlink_gdb -device $device -if SWD -port $gdb -swoport $tcl_port -telnetport $telnet_port -speed 10000 -nolocalhostonly -nohalt
     }
     elseif ($programmer -eq "other")
     {
