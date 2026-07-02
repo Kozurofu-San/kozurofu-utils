@@ -7,9 +7,15 @@ $start_time = Get-Date
 $dir = Get-Location
 
 $compilerPath = "C:\msys64\ucrt64\bin"
+$debuggerPath = "C:\msys64\mingw64\bin\gdb.exe"
 if (-not (Test-Path -Path $compilerPath))
 {
-    Write-Error "Compiler at $compilerPath not found"
+    Write-Error "Compiler at $compilerPath is not found. Install https://www.msys2.org/"
+    exit 1
+}
+if (-not (Test-Path -Path $debuggerPath))
+{
+    Write-Error "Debugger at $debuggerPath is not found. Install https://packages.msys2.org/packages/mingw-w64-x86_64-gdb"
     exit 1
 }
 $env:PATH=";$compilerPath;$env:PATH"
@@ -17,7 +23,7 @@ $env:PATH=";$compilerPath;$env:PATH"
 $filePath = "C:/vcpkg"
 if (-not (Test-Path -Path $filePath))
 {
-    Write-Host "Installation vcpkg"
+    Write-Host "Installation vcpkg from https://github.com/microsoft/vcpkg.git"
     git clone https://github.com/microsoft/vcpkg.git "C:/vcpkg"
 }
 
@@ -47,7 +53,6 @@ cmake .. -G Ninja `
     -DSDL2_DIR="$filePath" `
     -DCMAKE_SYSTEM_NAME=Generic `
     -DTARGET="Simulator" `
-    -DSIMULATOR=1 `
     -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake" `
     -DCMAKE_C_COMPILER="$compilerPath/gcc.exe" `
     -DCMAKE_ASM_COMPILER="$compilerPath/gcc.exe" `
