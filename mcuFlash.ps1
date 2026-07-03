@@ -15,6 +15,11 @@ if ($platform -like "*ESP32*") {
     {
         Get-Process -Name "python" -ErrorAction SilentlyContinue | Stop-Process -Force
         $com = python $PSScriptRoot\find_com_port.py
+        if ($com -eq "None")
+        {
+            Write-Error "Serial port isn't found. Check the device connection"
+            exit
+        }
         # & "${ENV:IDF_PATH}/export.ps1"
         # idf.py -p $com flash
         python.exe -m esptool `

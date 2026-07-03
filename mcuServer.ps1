@@ -1,6 +1,12 @@
 param([string] $platform = "ATSAM3X", [string] $programmer = "jlink", [int] $port = 2000)
 
 $jlink_gdb = "C:/Program Files/SEGGER/JLink/JLinkGDBServerCL.exe"
+if (-not (Test-Path -Path $jlink_gdb -PathType Leaf) -and ($programmer -eq "jlink"))
+{
+    Write-Error "Jlink isn't installed. https://www.segger.com/downloads/jlink/"
+    pause
+    exit
+}
 Stop-Process -Name openocd -ErrorAction SilentlyContinue
 
 $gdb         = $port.ToString()

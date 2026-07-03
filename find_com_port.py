@@ -19,7 +19,7 @@ def find_com_port():
         for i in range(0, vid.size):
             if port.vid == vid[i] and port.pid == pid[i]:
                 return port.device, dev[i], vid[i], pid[i]
-    return None
+    return None, None, None, None
 
 if __name__ == "__main__":
     com_port, dev, vid, pid = find_com_port()

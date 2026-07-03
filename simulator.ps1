@@ -1,18 +1,45 @@
 param([string] $build = "Debug")
 
-if ($env:Path -notlike "*C:\msys64\mingw64\bin*") { $env:Path += ";C:\msys64\mingw64\bin" }     # Ninja
-if ($env:Path -notlike "*C:\msys64\usr\bin*") { $env:Path += ";C:\msys64\usr\bin" }             # make
-
-$start_time = Get-Date
-$dir = Get-Location
-
-$compilerPath = "C:\msys64\ucrt64\bin"
-$debuggerPath = "C:\msys64\mingw64\bin\gdb.exe"
-if (-not (Test-Path -Path $compilerPath))
+# Ninja check
+$ninjaPath = "C:\msys64\mingw64\bin"
+if (-not (Test-Path -Path "$ninjaPath\ninja.exe"))
 {
-    Write-Error "Compiler at $compilerPath is not found. Install https://www.msys2.org/"
-    exit 1
+    Write-Error "Ninja at $ninjaPath is not found. Install https://packages.msys2.org/packages/mingw-w64-x86_64-ninja"
 }
+if ($env:Path -notlike "*$ninjaPath*")
+{
+    $env:Path += ";$ninjaPath"
+}
+
+# Makefile check
+$makePath = "C:\msys64\mingw64\bin"
+if (-not (Test-Path -Path "$makePath\make.exe"))
+{
+    Write-Error "Make at $makePath is not found. Install https://packages.msys2.org/packages/make"
+}
+if ($env:Path -notlike "*$makePath*")
+{
+    $env:Path += ";$makePath"
+}
+
+# Compiler check
+$compilerPath1 = "C:\msys64\ucrt64\bin"
+$compilerPath2 = "C:\msys64\mingw64\bin"
+if (Test-Path -Path "$compilerPath1\gcc.exe")
+{
+    $compilerPath = $compilerPath1
+}
+elseif (Test-Path -Path "$compilerPath2\gcc.exe")
+{
+    $compilerPath = $compilerPath2
+}
+else
+{
+    Write-Error "Compiler at $compilerPath1 and $compilerPath2 is not found. Install https://www.msys2.org/"
+}
+
+# Debugger check
+$debuggerPath = "C:\msys64\mingw64\bin\gdb.exe"
 if (-not (Test-Path -Path $debuggerPath))
 {
     Write-Error "Debugger at $debuggerPath is not found. Install https://packages.msys2.org/packages/mingw-w64-x86_64-gdb"
@@ -38,6 +65,9 @@ if (-not (Test-Path -Path $filePath))
 
 # $path = Resolve-Path -Path "./lv_port_pc_vscode"
 # Set-Location $path
+
+$start_time = Get-Date
+$dir = Get-Location
 
 $build_folder = 'build-lvgl'
 if (-not(Test-Path -Path $build_folder)) {

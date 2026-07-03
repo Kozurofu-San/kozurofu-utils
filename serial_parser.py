@@ -5,12 +5,10 @@ import find_com_port
 import threading
 
 baudrate = sys.argv[1]
-io = sys.argv[2]
 
 def read_from_serial(ser, port='COM3', baudrate=115200):
     try:
         while True:
-            # Чтение данных из порта
             try:
                 line = ser.readline().decode('utf-8').strip()
                 if line:
@@ -68,7 +66,7 @@ if __name__ == "__main__":
     if com_port:
         print(f"Serial device {dev} (VID: {hex(vid)} PID: {hex(pid)}) found on port: {com_port}")
     else:
-        print(f"Serial device not found.")
+        sys.exit("\033[91m {}\033[00m" .format("Error: Serial device not found"))
 
     readThread  = threading.Thread(target=read_from_serial, args=(ser, com_port, baudrate))
     writeThread = threading.Thread(target=write_to_serial , args=(ser, com_port, baudrate))
