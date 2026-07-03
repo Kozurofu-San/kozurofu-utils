@@ -86,7 +86,7 @@ $dir = Get-Location
 Set-Location $build_folder
 
 if ($env:Path -notlike "*C:\msys64\mingw64\bin*") { $env:Path += ";C:\msys64\mingw64\bin" }     # Ninja
-if ($env:Path -notlike "*C:\msys64\usr\bin*") { $env:Path += ";C:\msys64\usr\bin" }             # make
+# if ($env:Path -notlike "*C:\msys64\usr\bin*") { $env:Path += ";C:\msys64\usr\bin" }             # make
 
 if ($platform -like "*STM32*")
 {

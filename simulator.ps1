@@ -11,16 +11,16 @@ if ($env:Path -notlike "*$ninjaPath*")
     $env:Path += ";$ninjaPath"
 }
 
-# Makefile check
-$makePath = "C:\msys64\mingw64\bin"
-if (-not (Test-Path -Path "$makePath\make.exe"))
-{
-    Write-Error "Make at $makePath is not found. Install https://packages.msys2.org/packages/make"
-}
-if ($env:Path -notlike "*$makePath*")
-{
-    $env:Path += ";$makePath"
-}
+# # Makefile check
+# $makePath = "C:\msys64\usr\bin"
+# if (-not (Test-Path -Path "$makePath\make.exe"))
+# {
+#     Write-Error "Make at $makePath is not found. Install https://packages.msys2.org/packages/make"
+# }
+# if ($env:Path -notlike "*$makePath*")
+# {
+#     $env:Path += ";$makePath"
+# }
 
 # Compiler check
 $compilerPath1 = "C:\msys64\ucrt64\bin"
