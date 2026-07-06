@@ -1,30 +1,8 @@
 param([string] $build = "Debug")
 
-# Ninja check
-$ninjaPath = "C:\msys64\mingw64\bin"
-if (-not (Test-Path -Path "$ninjaPath\ninja.exe"))
-{
-    Write-Error "Ninja at $ninjaPath is not found. Install https://packages.msys2.org/packages/mingw-w64-x86_64-ninja"
-}
-if ($env:Path -notlike "*$ninjaPath*")
-{
-    $env:Path += ";$ninjaPath"
-}
-
-# # Makefile check
-# $makePath = "C:\msys64\usr\bin"
-# if (-not (Test-Path -Path "$makePath\make.exe"))
-# {
-#     Write-Error "Make at $makePath is not found. Install https://packages.msys2.org/packages/make"
-# }
-# if ($env:Path -notlike "*$makePath*")
-# {
-#     $env:Path += ";$makePath"
-# }
-
 # Compiler check
-$compilerPath1 = "C:\msys64\ucrt64\bin"
-$compilerPath2 = "C:\msys64\mingw64\bin"
+$compilerPath1 = "$env:MSYS_PATH\ucrt64\bin"
+$compilerPath2 = "$env:MSYS_PATH\mingw64\bin"
 if (Test-Path -Path "$compilerPath1\gcc.exe")
 {
     $compilerPath = $compilerPath1
@@ -39,7 +17,7 @@ else
 }
 
 # Debugger check
-$debuggerPath = "C:\msys64\mingw64\bin\gdb.exe"
+$debuggerPath = "$env:MSYS_PATH\mingw64\bin\gdb.exe"
 if (-not (Test-Path -Path $debuggerPath))
 {
     Write-Error "Debugger at $debuggerPath is not found. Install https://packages.msys2.org/packages/mingw-w64-x86_64-gdb"
