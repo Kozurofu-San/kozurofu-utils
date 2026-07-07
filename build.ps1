@@ -65,6 +65,17 @@ function SetEnv {
     }
 }
 
+function Compile {
+    cmake .. -G $build_system_alias `
+    -DCMAKE_BUILD_TYPE="${build}" `
+    -DPLATFORM_DRIVER="${driver}" `
+    -DCMAKE_PROJECT_NAME="${project}" `
+    -DCMAKE_SYSTEM_NAME=Generic `
+    -DLOG="${log}" `
+    -DTARGET="$cpu" `
+    -DBOARD="$board"  
+}
+
 if     ( $cpu -like "*STM32F1*" ) { $driver = "STM32F1" }
 elseif ( $cpu -like "*STM32F4*" ) { $driver = "STM32F4" }
 elseif ( $cpu -like "*ATSAM3X*" ) { $driver = "ATSAM3X" }
@@ -76,7 +87,6 @@ elseif ( $cpu -like "*ATmega*"  ) { $driver = "AVR"     }
 
 if ($cpu -like "*STM32*") 
 {
-
     $filePath = Resolve-Path -Path "./platforms/${board}/cmake/stm32cubemx/CMakeLists.txt"
     if (-not (Test-Path -Path $filePath)) {
         Write-Error "File was not found: $filePath"
@@ -132,124 +142,138 @@ if (-not(Test-Path -Path $build_folder)) {
 $dir = Get-Location
 Set-Location $build_folder
 
-if ($cpu -like "*STM32*")
+switch -Wildcard ($cpu)
 {
-    if (-not (Get-Command "arm-none-eabi-gcc" -ErrorAction SilentlyContinue))
+    "*ESP32*"
     {
-        Write-Error "Install ARM GNU toolchain https://gitlab.arm.com/tooling/gnu-toolchains-for-arm `
-        Add the environmental variable PATH. Execute: `
-        rundll32.exe sysdm.cpl,EditEnvironmentVariables"
-        exit
+        if (-not $env:IDF_PATH) {
+            Write-Error "Install ESP32 toolchain https://dl.espressif.com/dl/eim/ `
+            Add the environmental variable IDF_PATH. Execute: `
+            rundll32.exe sysdm.cpl,EditEnvironmentVariables"
+            exit
+        }
+        $idf_exports = python "${ENV:IDF_PATH}/tools/activate.py" --export
+        try
+        {
+            . $idf_exports
+        }
+        catch
+        {
+            Write-Host $idf_exports
+            Write-Warning "No IDF exports"
+            exit 0
+        }
+        SetEnv("$HOME/.espressif/tools/xtensa-esp-elf-gdb")
+        SetEnv("$HOME/.espressif/tools/riscv32-esp-elf-gdb")
+        SetEnv("$HOME/.espressif/tools/xtensa-esp-elf")
+        SetEnv("$HOME/.espressif/tools/riscv32-esp-elf")
+        cmake .. -G $build_system_alias `
+            -DCMAKE_BUILD_TYPE="${build}" `
+            -DPLATFORM_DRIVER="${driver}" `
+            -DCMAKE_PROJECT_NAME="${project}" `
+            -DPYTHON="python" `
+            -DCMAKE_SYSTEM_NAME=Generic `
+            -DTARGET="$cpu" `
+            -DBOARD="$board" `
+            -DCMAKE_TOOLCHAIN_FILE="${ENV:IDF_PATH}/tools/cmake/toolchain-${cpu}.cmake" `
+            -DESP_PLATFORM=1 `
+            -DLOG="${log}" `
+            -DSDKCONFIG="c:/Users/Kozurofu/Documents/hello_world/sdkconfig"
+        break
     }
-    cmake .. -G $build_system_alias `
-        -DCMAKE_BUILD_TYPE="${build}" `
-        -DPLATFORM_DRIVER="${driver}" `
-        -DCMAKE_PROJECT_NAME="${project}" `
-        -DCMAKE_SYSTEM_NAME=Generic `
-        -DLOG="${log}" `
-        -DTARGET="$cpu" `
-        -DBOARD="$board"
-}
-elseif ($cpu -like "*ATSAM*")
-{
-    if (-not (Get-Command "arm-none-eabi-gcc" -ErrorAction SilentlyContinue))
+
+    "*STM32*"
     {
-        Write-Error "Install ARM GNU toolchain https://gitlab.arm.com/tooling/gnu-toolchains-for-arm `
-        Add the environmental variable PATH. Execute: `
-        rundll32.exe sysdm.cpl,EditEnvironmentVariables"
-        exit
+        if (-not (Get-Command "arm-none-eabi-gcc" -ErrorAction SilentlyContinue)) {
+            Write-Error "Install ARM GNU toolchain https://gitlab.arm.com/tooling/gnu-toolchains-for-arm `
+            Add the environmental variable PATH. Execute: `
+            rundll32.exe sysdm.cpl,EditEnvironmentVariables"
+            exit
+        }
+        Compile
     }
-    if (-not $env:ASF_PATH) {
-        Write-Error "Install Atmel toolchain https://www.microchip.com/en-us/tools-resources/develop/libraries/advanced-software-framework `
-        Add the environmental variable ASF_PATH. Execute: `
-        rundll32.exe sysdm.cpl,EditEnvironmentVariables"
-        exit
-    }
-    cmake .. -G $build_system_alias `
-        -DCMAKE_BUILD_TYPE="${build}" `
-        -DPLATFORM_DRIVER="${driver}" `
-        -DCMAKE_PROJECT_NAME="${project}" `
-        -DCMAKE_SYSTEM_NAME=Generic `
-        -DLOG="${log}" `
-        -DTARGET="$cpu" `
-        -DBOARD="$board"
-}
-elseif ($cpu -like "*PIC32MX*")
-{
-    if (-not (Get-Command "xc32-gcc" -ErrorAction SilentlyContinue))
+
+    "*ATSAM*"
     {
-        Write-Error "Install PIC32 toolchain https://www.microchip.com/en-us/tools-resources/develop/mplab-xc-compilers/xc32 `
-        Add the environmental variable PATH. Execute: `
-        rundll32.exe sysdm.cpl,EditEnvironmentVariables"
+        if (-not (Get-Command "arm-none-eabi-gcc" -ErrorAction SilentlyContinue)) {
+            Write-Error "Install ARM GNU toolchain https://gitlab.arm.com/tooling/gnu-toolchains-for-arm `
+            Add the environmental variable PATH. Execute: `
+            rundll32.exe sysdm.cpl,EditEnvironmentVariables"
+            exit
+        }
+        if (-not $env:ASF_PATH) {
+            Write-Error "Install Atmel toolchain https://www.microchip.com/en-us/tools-resources/develop/libraries/advanced-software-framework `
+            Add the environmental variable ASF_PATH. Execute: `
+            rundll32.exe sysdm.cpl,EditEnvironmentVariables"
+            exit
+        }
+        Compile
+    }
+
+    "*PIC32*"
+    {
+        if (-not (Get-Command "xc32-gcc" -ErrorAction SilentlyContinue)) {
+            Write-Error "Install PIC32 toolchain https://www.microchip.com/en-us/tools-resources/develop/mplab-xc-compilers/xc32 `
+            Add the environmental variable PATH. Execute: `
+            rundll32.exe sysdm.cpl,EditEnvironmentVariables"
+            exit
+        }
+        if (-not $env:PIC_PATH) {
+            Write-Error "Install PIC10/12/16/18/24/32 IDE https://www.microchip.com/en-us/tools-resources/archives/mplab-ecosystem `
+            MPLAB v6.20 is the latest IDE that supports PICKIT3
+            Add the environmental variable PIC_PATH. Execute: `
+            rundll32.exe sysdm.cpl,EditEnvironmentVariables"
+            exit
+        }
+        Compile
+    }
+
+    "*MSP430*"
+    {
+        if (-not $env:MSP430_PATH) {
+            Write-Error "Install MSP430 toolchain https://www.ti.com/tool/MSP430-GCC-OPENSOURCE#downloads `
+            Add the environmental variable MSP430_PATH. Execute: `
+            rundll32.exe sysdm.cpl,EditEnvironmentVariables"
+            exit
+        }
+        Compile
+    }
+
+    {$_ -like "*ATtiny*" -or $_ -like "*ATmega*" -or $_ -like "*ATxmega*"}
+    {
+        if (-not $env:AVR_PATH) {
+            Write-Error "Install MSP430 toolchain https://www.microchip.com/en-us/tools-resources/develop/microchip-studio/gcc-compilers `
+            Add the environmental variable AVR_PATH. Execute: `
+            rundll32.exe sysdm.cpl,EditEnvironmentVariables"
+            exit
+        }
+        Compile
+    }
+
+    {$_ -like "*PIC10*" -or $_ -like "*PIC12*" -or $_ -like "*PIC16*" -or $_ -like "*PIC18*"}
+    {
+        if (-not (Get-Command "xc8-gcc" -ErrorAction SilentlyContinue))
+        {
+            Write-Error "Install PIC8 toolchain https://www.microchip.com/en-us/tools-resources/develop/mplab-xc-compilers/xc8 `
+            Add the environmental variable PATH. Execute: `
+            rundll32.exe sysdm.cpl,EditEnvironmentVariables"
+            exit
+        }
+        if (-not $env:PIC_PATH) {
+            Write-Error "Install PIC10/12/16/18/24/32 IDE https://www.microchip.com/en-us/tools-resources/archives/mplab-ecosystem `
+            MPLAB v6.20 is the latest IDE that supports PICKIT3
+            Add the environmental variable PIC_PATH. Execute: `
+            rundll32.exe sysdm.cpl,EditEnvironmentVariables"
+            exit
+        }
+        Compile
+    }
+
+    default
+    {
+        Write-Error "Wrong MCU"
         exit
     }
-    if (-not $env:PIC_PATH) {
-        Write-Error "Install PIC16/24/32 IDE https://www.microchip.com/en-us/tools-resources/archives/mplab-ecosystem `
-        MPLAB v6.20 is the latest IDE that supports PICKIT3
-        Add the environmental variable PIC_PATH. Execute: `
-        rundll32.exe sysdm.cpl,EditEnvironmentVariables"
-        exit
-    }
-    cmake .. -G $build_system_alias `
-        -DCMAKE_BUILD_TYPE="${build}" `
-        -DPLATFORM_DRIVER="${driver}" `
-        -DCMAKE_PROJECT_NAME="${project}" `
-        -DCMAKE_SYSTEM_NAME=Generic `
-        -DLOG="${log}" `
-        -DTARGET="$cpu" `
-        -DBOARD="$board"
-}
-elseif ($cpu -like "*ESP32*")
-{
-    if (-not $env:IDF_PATH) {
-        Write-Error "Install ESP32 toolchain https://dl.espressif.com/dl/eim/ `
-        Add the environmental variable IDF_PATH. Execute: `
-        rundll32.exe sysdm.cpl,EditEnvironmentVariables"
-        exit
-    }
-    $idf_exports = python "${ENV:IDF_PATH}/tools/activate.py" --export
-    try {
-        . $idf_exports
-    }
-    catch {
-        Write-Host $idf_exports
-        Write-Warning "No IDF exports"
-        exit 0
-    }
-    SetEnv("$HOME/.espressif/tools/xtensa-esp-elf-gdb")
-    SetEnv("$HOME/.espressif/tools/riscv32-esp-elf-gdb")
-    SetEnv("$HOME/.espressif/tools/xtensa-esp-elf")
-    SetEnv("$HOME/.espressif/tools/riscv32-esp-elf")
-    cmake .. -G $build_system_alias `
-        -DCMAKE_BUILD_TYPE="${build}" `
-        -DPLATFORM_DRIVER="${driver}" `
-        -DCMAKE_PROJECT_NAME="${project}" `
-        -DPYTHON="python" `
-        -DCMAKE_SYSTEM_NAME=Generic `
-        -DTARGET="$cpu" `
-        -DBOARD="$board" `
-        -DCMAKE_TOOLCHAIN_FILE="${ENV:IDF_PATH}/tools/cmake/toolchain-${cpu}.cmake" `
-        -DESP_PLATFORM=1 `
-        -DLOG="${log}" `
-        -DSDKCONFIG="c:/Users/Kozurofu/Documents/hello_world/sdkconfig"
-}
-elseif ($cpu -like "*MSP430*")
-{
-    if (-not $env:MSP430_PATH) {
-        Write-Error "Install MSP430 toolchain https://www.ti.com/tool/MSP430-GCC-OPENSOURCE#downloads `
-        Add the environmental variable MSP430_PATH. Execute: `
-        rundll32.exe sysdm.cpl,EditEnvironmentVariables"
-        exit
-    }
-    cmake .. -G $build_system_alias `
-        -DCMAKE_BUILD_TYPE="${build}" `
-        -DPLATFORM_DRIVER="${driver}" `
-        -DCMAKE_PROJECT_NAME="${project}" `
-        -DCMAKE_SYSTEM_NAME=Generic `
-        -DLOG="${log}" `
-        -DTARGET="$cpu" `
-        -DBOARD="$board"
-        # msp430-elf-size -A build/Template.elf
 }
 
 if ($LASTEXITCODE -ne 0) {
