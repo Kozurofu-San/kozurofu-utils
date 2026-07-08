@@ -1,0 +1,149 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "ARM",
+            "cwd": "${workspaceRoot}",
+            "executable": "./build/${config:project}.elf",
+            "request": "launch",
+            "type": "cortex-debug",
+            "runToEntryPoint": "main",
+            "servertype": "openocd",
+            "serverpath": "${env:OCD_PATH}/openocd.exe",
+            "device": "${config:cpu}",
+            "interface": "swd",
+            "configFiles": [
+                "interface/stlink.cfg",
+                "target/"
+            ],
+            "svdFile": "${workspaceRoot}/submodules/utils/svd/${config:cpu}.svd",
+            "showDevDebugOutput": "none",
+            "swoConfig":{
+                "enabled":true,
+                "source":"probe",
+                "swoFrequency": 0,
+                "cpuFrequency": 0,
+                "decoders": [
+                    {
+                        "port": 0,
+                        "label": "Info",
+                        "type": "console",
+                        "encoding":"ascii",
+                        "showOnStartup": true,
+                        "timestamp": true
+                    },
+                    {
+                        "port": 1,
+                        "label": "Warnings",
+                        "type": "console",
+                        "encoding":"ascii",
+                        "showOnStartup": true,
+                        "timestamp": true
+                    },
+                    {
+                        "port": 2,
+                        "label": "Errors",
+                        "type": "console",
+                        "encoding":"ascii",
+                        "showOnStartup": true,
+                        "timestamp": true
+                    }
+                ]
+            },
+            "openOCDLaunchCommands": [
+                "adapter speed 4000"
+            ],
+            "postLaunchCommands": ["-enable-pretty-printing"],
+            "preLaunchTask": "Build",
+            "postDebugTask": "MCU Continue"
+        },
+        {
+            "name": "Debug",
+            "cwd": "${workspaceRoot}",
+            "executable": "./build/${config:project}.elf",
+            "request": "launch",
+            "type": "cortex-debug",
+            "runToEntryPoint": "main",
+            "servertype": "external",
+            "gdbTarget": "${config:mcu_server}:2000",
+            "svdFile": "${workspaceRoot}/submodules/utils/svd/${config:cpu}.svd",
+            "showDevDebugOutput": "none",
+            "preLaunchTask": "Build",
+            "postDebugTask": "MCU Continue"
+        },
+        {
+            "name": "Debug continue",
+            "cwd": "${workspaceRoot}",
+            "executable": "./build/${config:project}.elf",
+            "request": "launch",
+            "type": "cortex-debug",
+            "servertype": "external",
+            "gdbTarget": "${config:mcu_server}:2000",
+            "svdFile": "${workspaceRoot}/submodules/utils/svd/${config:cpu}.svd",
+            "showDevDebugOutput": "none",
+            "overrideLaunchCommands": [
+                "monitor resume"
+            ],
+            "postDebugTask": "MCU Continue"
+        },
+        {
+            "name": "ESP32",
+            "type": "cppdbg",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "program": "${workspaceFolder}/build/${config:project}.elf",
+            "MIMode": "gdb",
+            "miDebuggerPath": "xtensa-esp32s3-elf-gdb",
+            "svdPath": "${workspaceFolder}/submodules/utils/svd/${config:platform}.svd",
+            "setupCommands": [
+                { "text": "target extended-remote localhost:2000" },
+                { "text": "set remote hardware-watchpoint-limit 2" },
+                { "text": "monitor reset halt" },
+                { "text": "flushregs" }
+            ],
+            "externalConsole": false,
+            "preLaunchTask": "MCU Reset",
+            "postDebugTask": "MCU Continue"
+        },
+        {
+            "name": "MSP430",
+            "type": "cppdbg",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "program": "${workspaceFolder}/build/${config:project}.elf",
+            "MIMode": "gdb",
+            "miDebuggerPath": "msp430-elf-gdb",
+            "svdPath": "${workspaceFolder}/submodules/utils/svd/${config:platform}.svd",
+            "setupCommands": [
+                { "text": "target remote localhost:55000" },
+                { "text": "set remote hardware-watchpoint-limit 2" },
+                { "text": "monitor halt" },
+                { "text": "flushregs" },
+                { "text": "set output-radix 16" }
+            ],
+            "externalConsole": false
+        },
+        {
+            "name": "LVGL",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build-lvgl/main",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "Simulator",
+            "stopAtEntry": false,
+            "linux": {
+                "MIMode": "gdb",
+                "miDebuggerPath": "/usr/bin/gdb"
+                },
+                "osx": {
+                "MIMode": "lldb"
+                },
+                "windows": {
+                "MIMode": "gdb",
+                "miDebuggerPath": "C:\\msys64\\mingw64\\bin\\gdb.exe"
+                }
+        }
+        
+    ]
+}

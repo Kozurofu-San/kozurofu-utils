@@ -1,7 +1,24 @@
-param([string] $build, [string] $project, [string] $cpu = "ESP32", [string] $board, [int] $log, [string] $build_system)
+param(
+    [string] $build,
+    [string] $project,
+    [string] $cpu = "ESP32",
+    [string] $board,
+    [int] $log,
+    [string] $build_system,
+    [string] $programmer,
+    [string] $workspace_path
+)
 
 $start_time = Get-Date
 $driver = ""
+
+# CMake check
+if (-not (Get-Command "cmake" -ErrorAction SilentlyContinue)) {
+    Write-Error "Install CMake https://cmake.org/download/ `
+    Add the environmental variable PATH. Execute: `
+    rundll32.exe sysdm.cpl,EditEnvironmentVariables"
+    exit
+}
 
 # MSYS2 check
 if (-not $env:MSYS_PATH) {
@@ -76,14 +93,14 @@ function Compile {
     -DBOARD="$board"  
 }
 
-if     ( $cpu -like "*STM32F1*" ) { $driver = "STM32F1" }
-elseif ( $cpu -like "*STM32F4*" ) { $driver = "STM32F4" }
-elseif ( $cpu -like "*ATSAM3X*" ) { $driver = "ATSAM3X" }
+if     ( $cpu -like "*STM32*"   ) { $driver = $cpu.Substring(0, 7) }
+elseif ( $cpu -like "*SAM3X*"   ) { $driver = "ATSAM3X" }
 elseif ( $cpu -like "*PIC32MX*" ) { $driver = "PIC32MX" }
 elseif ( $cpu -like "*ESP32*"   ) { $driver = "ESP32"   }
 elseif ( $cpu -like "*MSP430*"  ) { $driver = "MSP430"  }
 elseif ( $cpu -like "*ATtiny*"  ) { $driver = "AVR"     }
 elseif ( $cpu -like "*ATmega*"  ) { $driver = "AVR"     }
+elseif ( $cpu -like "*ATxmega*" ) { $driver = "AVR"     }
 
 if ($cpu -like "*STM32*") 
 {
@@ -295,6 +312,8 @@ if ($LASTEXITCODE -ne 0) {
 if ($cpu -like "*ESP32*") { ninja size }
 Set-Location $dir
 # idf.py size
+
+./submodules/utils/launchGenerator.ps1 $build $project $cpu $board $log $build_system $programmer $workspace_path
 
 $end_time = Get-Date
 $executionTime =  $end_time - $start_time
