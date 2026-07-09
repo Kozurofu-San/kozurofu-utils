@@ -99,12 +99,13 @@ elseif ($cpu -like "MSP430*")
 }
 elseif ($cpu -like "PIC10*" -or $cpu -like "PIC12*" -or $cpu -like "PIC16*" -or $cpu -like "PIC18*")
 {
+    Set-Location build
     if ($cpu -match "PIC32.*") {
         $mcuLine = $matches[0].Substring(3)
     }
-    $out = & "$env:PIC_PATH\mplab_platform\mplab_ipe\ipecmd.exe" -TPPK3 -P"$mcuLine" -F"build/$name.hex" -Y
+    $out = & "$env:PIC_PATH\mplab_platform\mplab_ipe\ipecmd.exe" -TPPK3 -P"$mcuLine" -F"$name.hex" -Y
     if ($out.ToLower().Contains("Verify failed")) {
-        & "$env:PIC_PATH\mplab_platform\mplab_ipe\ipecmd.exe" -TPPK3 -P"$mcuLine" -F"build/$name.hex" -M
+        & "$env:PIC_PATH\mplab_platform\mplab_ipe\ipecmd.exe" -TPPK3 -P"$mcuLine" -F"$name.hex" -M
     }
 }
 elseif ($cpu -like "PIC32*")
@@ -114,12 +115,14 @@ elseif ($cpu -like "PIC32*")
 
     }
     else {
+        Set-Location build
         if ($cpu -match "PIC32.*") {
             $mcuLine = $matches[0].Substring(3)
         }
-        $out = & "$env:PIC_PATH\mplab_platform\mplab_ipe\ipecmd.exe" -TPPK3 -P"$mcuLine" -F"build/$name.hex" -Y
-        if ($out.ToLower().Contains("Verify failed")) {
-            & "$env:PIC_PATH\mplab_platform\mplab_ipe\ipecmd.exe" -TPPK3 -P"$mcuLine" -F"build/$name.hex" -M
+        $out = & "$env:PIC_PATH\mplab_platform\mplab_ipe\ipecmd.exe" -TPPK3 -P"$mcuLine" -F"$name.hex" -Y
+        Write-Output $out
+        if ($out.Contains("Verify failed")) {
+            & "$env:PIC_PATH\mplab_platform\mplab_ipe\ipecmd.exe" -TPPK3 -P"$mcuLine" -F"$name.hex" -M 
         }
     }
     

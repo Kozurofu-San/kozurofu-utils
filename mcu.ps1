@@ -146,6 +146,7 @@ $mcuErase = {
         if ($cpu -match "PIC32.*") {
             $mcuLine = $matches[0].Substring(3)
         }
+		Set-Location ../../build
         & "$env:PIC_PATH\mplab_platform\mplab_ipe\ipecmd.exe" -TPPK3 -P"$mcuLine" -E
 	}
 	else
