@@ -1,9 +1,22 @@
-param([string] $platform = "ATSAM3X", [string] $programmer = "jlink", [int] $port = 2000)
+param(
+    [string] $cpu = "ATSAM3X",
+    [string] $board = "arduino-due",
+    [int] $log = 1,
+    [string] $programmer = "jlink",
+    [int] $port = 2000
+)
 
-$jlink_gdb = "C:/Program Files/SEGGER/JLink/JLinkGDBServerCL.exe"
+$jlink_gdb = "${env:JLINK_PATH}/JLinkGDBServerCL.exe"
 if (-not (Test-Path -Path $jlink_gdb -PathType Leaf) -and ($programmer -eq "jlink"))
 {
     Write-Error "Jlink isn't installed. https://www.segger.com/downloads/jlink/"
+    pause
+    exit
+}
+$openocd = "${env:OCD_PATH}/openocd.exe"
+if (-not (Test-Path -Path $openocd -PathType Leaf) -and ($programmer -ne "jlink"))
+{
+    Write-Error "OpenOCD isn't installed"
     pause
     exit
 }
@@ -13,38 +26,37 @@ $gdb         = $port.ToString()
 $tcl_port    = ($port+1).ToString()
 $telnet_port = ($port+2).ToString()
 
-if     ( $platform -like "*STM32F103*"  ) { $device = "STM32F103C8"     ; $cfg = "stm32f1x"   ; $cpu_frequency = 72000000  }
-elseif ( $platform -like "*STM32F407*"  ) { $device = "STM32F407VE"     ; $cfg = "stm32f4x"   ; $cpu_frequency = 168000000 }
-elseif ( $platform -like "*ATSAM3X*"    ) { $device = "ATSAM3X8E"       ; $cfg = "at91sam3XXX"; $cpu_frequency = 84000000  }
-elseif ( $platform -like "*PIC32MX*"    ) { $device = "PIC32MX440F256H" ; $cfg = ""                                        }
-elseif ( $platform -like "*ESP32"       ) { $device = "XTENSA LX6"      ; $cfg = "esp32-bridge"                            }
-elseif ( $platform -like "*ESP32S3"     ) { $device = "XTENSA LX7"      ; $cfg = "esp32s3-builtin"                         }
-elseif ( $platform -like "*ESP32P4"     ) { $device = "RISCV"           ; $cfg = "esp32p4-builtin"                         }
+$swoFrequency, $cpuFrequency, $cfg = ./mcuGetSpeed.ps1 $cpu $board $log
 
-if ($platform -like "*STM32*" -or $platform -like "*SAM3*")
+if ($cpu -like "STM32*" -or $cpu -like "*SAM*")
 {
     if ($programmer -eq "jlink")
     {
-        & $jlink_gdb -device $device -if SWD -port $gdb -swoport $tcl_port -telnetport $telnet_port -speed 10000 -nolocalhostonly -nohalt
+        & $jlink_gdb -device $cpu -if SWD -port $gdb -swoport $tcl_port -telnetport $telnet_port -speed 10000 -nolocalhostonly -nohalt
     }
     elseif ($programmer -eq "other")
     {
-        openocd `
-        -f interface/stlink.cfg `
-        -f target/$cfg.cfg `
+        & $openocd `
+        -c "set CHIPNAME $cpu" `
         -c "set CONNECT_UNDER_RESET 1" `
+        -f interface/stlink.cfg `
+        -c "transport select swd" `
+        -f target/$cfg `
         -c "gdb port $gdb" `
         -c "tcl port $tcl_port" `
         -c "telnet port $telnet_port" `
         -c "adapter speed 4000" `
         -c "bindto 0.0.0.0" `
-        -c "tpiu config internal - uart off $cpu_frequency" `
         -c "itm ports on"
+        # -c "tpiu config internal - uart off $cpu_frequency" `
         # -c "reset_config srst_only srst_nogate connect_assert_srst" `
     }
 }
-elseif ($platform -like "*ESP32*")
+elseif ($cpu -like "*ESP32*")
 {
+    if     ( $cpu -like "*ESP32"   ) { $cfg = "esp32-bridge"    }
+    elseif ( $cpu -like "*ESP32S3" ) { $cfg = "esp32s3-builtin" }
+    elseif ( $cpu -like "*ESP32P4" ) { $cfg = "esp32p4-builtin" }
     if ($programmer -eq "jlink")
     {
         & $jlink_gdb -device $device -if SWD -port $gdb -swoport $tcl_port -telnetport $telnet_port -speed 1000 -nolocalhostonly -nohalt
@@ -57,7 +69,6 @@ elseif ($platform -like "*ESP32*")
         $path = Get-ChildItem -Directory $ocd_path
         $ocd_path = "$ocd_path\$path\bin"
         Set-Location $ocd_path
-        # Set-Location "C:\openocd\bin"
         .\openocd.exe `
             -f board/$cfg.cfg `
             -c "gdb port $gdb" `
@@ -67,7 +78,7 @@ elseif ($platform -like "*ESP32*")
             # -c "set _RTOS none" `   # target/esp_common.cfg -> set _RTOS "none"/"hwthread"
     }
 }
-elseif ($platform -like "*MSP430*")
+elseif ($cpu -like "*MSP430*")
 {
     gdb_agent_console $env:MSP430_PATH/msp430.dat
 }

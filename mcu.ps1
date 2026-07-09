@@ -1,4 +1,10 @@
-param([string] $script='mcuContinue', [string] $server='localhost', [string] $platform, [int] $port=2000, [string] $programmer)
+param(
+	[string] $script='mcuContinue',
+	[string] $server='localhost',
+	[string] $cpu,
+	[int] $port=2000,
+	[string] $programmer
+)
 
 $mcuReset = {
 	param([string] $server, [string] $port, [string] $gdb, [string] $programmer)
@@ -135,36 +141,46 @@ $mcuErase = {
 	param([string] $server, [string] $port, [string] $gdb, [string] $programmer)
 	# openocd -f interface\\stlink.cfg -f target\\stm32f7x.cfg -c "flash init; init; reset halt; flash erase_sector 0 0 0; exit"
 	
-	if ($programmer -eq "jlink")
+	if ($cpu -like "PIC*")
 	{
-		& $gdb -batch `
-		-ex "target extended-remote ${server}:${port}" `
-		-ex "monitor flash erase 0x08000000" `
-		-ex "monitor reset" `
-		-ex "set confirm off" `
-		-ex "quit" `
-		program --arg --another
+        if ($cpu -match "PIC32.*") {
+            $mcuLine = $matches[0].Substring(3)
+        }
+        & "$env:PIC_PATH\mplab_platform\mplab_ipe\ipecmd.exe" -TPPK3 -P"$mcuLine" -E
 	}
 	else
 	{
-		& $gdb -batch `
-		-ex "target extended-remote ${server}:${port}" `
-		-ex "monitor flash erase_sector 0 0 last" `
-		-ex "set confirm off" `
-		-ex "quit" `
-		program --arg --another
+		if ($programmer -eq "jlink")
+		{
+			& $gdb -batch `
+			-ex "target extended-remote ${server}:${port}" `
+			-ex "monitor flash erase 0x08000000" `
+			-ex "monitor reset" `
+			-ex "set confirm off" `
+			-ex "quit" `
+			program --arg --another
+		}
+		else
+		{
+			& $gdb -batch `
+			-ex "target extended-remote ${server}:${port}" `
+			-ex "monitor flash erase_sector 0 0 last" `
+			-ex "set confirm off" `
+			-ex "quit" `
+			program --arg --another
+		}
 	}
 }
 
 $gdb = ""
-if     ($platform -like "*STM32*" -or $platform -like "*SAM*") { $gdb = "arm-none-eabi-gdb"      }
-elseif ($platform -eq "ESP32"      )                           { $gdb = "xtensa-esp32-elf-gdb"   }
-elseif ($platform -eq "ESP32S2"    )                           { $gdb = "xtensa-esp32s2-elf-gdb" }
-elseif ($platform -eq "ESP32S3"    )                           { $gdb = "xtensa-esp32s3-elf-gdb" }
-elseif ($platform -like "*ESP32*"  )                           { $gdb = "riscv32-esp-elf-gdb"    }
-elseif ($platform -like "*MSP430*" )                           { $gdb = "msp430-elf-gdb"         }
-elseif ($platform -like "*PIC32*"  )                           { $gdb = ""                       }
-elseif ($platform -like "*AVR*"    )                           { $gdb = ""                       }
+if     ($cpu -like "*STM32*" -or $cpu -like "*SAM*") { $gdb = "arm-none-eabi-gdb"      }
+elseif ($cpu -eq "ESP32"      )                           { $gdb = "xtensa-esp32-elf-gdb"   }
+elseif ($cpu -eq "ESP32S2"    )                           { $gdb = "xtensa-esp32s2-elf-gdb" }
+elseif ($cpu -eq "ESP32S3"    )                           { $gdb = "xtensa-esp32s3-elf-gdb" }
+elseif ($cpu -like "*ESP32*"  )                           { $gdb = "riscv32-esp-elf-gdb"    }
+elseif ($cpu -like "*MSP430*" )                           { $gdb = "msp430-elf-gdb"         }
+elseif ($cpu -like "*PIC32*"  )                           { $gdb = ""                       }
+elseif ($cpu -like "*AVR*"    )                           { $gdb = ""                       }
 
 if ($script -match 'mcuReset') 		{Invoke-Command -ScriptBlock $mcuReset 		-ArgumentList $server, $port, $gdb, $programmer}
 if ($script -match 'mcuContinue') 	{Invoke-Command -ScriptBlock $mcuContinue	-ArgumentList $server, $port, $gdb, $programmer}

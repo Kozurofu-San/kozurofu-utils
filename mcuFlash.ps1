@@ -1,6 +1,6 @@
-param([string] $platform = "ESP32", [string] $name, [string] $server='localhost', [int] $port=2000)
+param([string] $cpu = "ESP32", [string] $name, [string] $programmer, [string] $server='localhost', [int] $port=2000)
 
-if ($platform -like "*ESP32*") {
+if ($cpu -like "ESP32*") {
     
     if (!(Test-Path -Path "$PSScriptRoot/../../build/$name.bin" -PathType Leaf) -or
         !(Test-Path -Path "$PSScriptRoot/../../build/$name.elf" -PathType Leaf))
@@ -38,17 +38,15 @@ if ($platform -like "*ESP32*") {
         # $idf_exports = python "${ENV:IDF_PATH}/tools/activate.py" --export
         # . $idf_exports
         
-        if ($platform -match "ESP32" -or $platform -match "ESP32S2" -or $platform -match "ESP32S3")
+        if ($cpu -match "ESP32" -or $cpu -match "ESP32S2" -or $cpu -match "ESP32S3")
         {
-            $gdbRoot = Join-Path $HOME ".espressif/tools/xtensa-esp-elf-gdb"
-            $versionDir = Get-ChildItem -Path $gdbRoot -Directory | Select-Object -First 1
+            $versionDir = Get-ChildItem "$HOME/.espressif/tools/xtensa-esp-elf-gdb" -Directory | Select-Object -First 1
             $gdbBin = Join-Path $versionDir.FullName "xtensa-esp-elf-gdb/bin"
             $env:PATH = "$gdbBin;$env:PATH"
         }
         else
         {
-            $gdbRoot = Join-Path $HOME ".espressif/tools/riscv32-esp-elf-gdb"
-            $versionDir = Get-ChildItem -Path $gdbRoot -Directory | Select-Object -First 1
+            $versionDir = Get-ChildItem -Path "$HOME/.espressif/tools/riscv32-esp-elf-gdb" -Directory | Select-Object -First 1
             $gdbBin = Join-Path $versionDir.FullName "riscv32-esp-elf-gdb/bin"
             $env:PATH = "$gdbBin;$env:PATH"
         
@@ -57,9 +55,9 @@ if ($platform -like "*ESP32*") {
         $folder = Get-Location
         $folder = $folder -replace '\\', '/'
         $gdb = "riscv32-esp-elf-gdb"
-        if ($platform -match "ESP32" -or $platform -match "ESP32S2" -or $platform -match "ESP32S3")
+        if ($cpu -match "ESP32" -or $cpu -match "ESP32S2" -or $cpu -match "ESP32S3")
         {
-            $gdb = "xtensa-$($platform.ToLower())-elf-gdb"
+            $gdb = "xtensa-$($cpu.ToLower())-elf-gdb"
         }
         & $gdb -batch `
         -ex "pwd" `
@@ -73,7 +71,7 @@ if ($platform -like "*ESP32*") {
         -ex "quit"
     }
 }
-elseif ($platform -like "*SAM3*" -or $platform -like "*STM32*")
+elseif ($cpu -like "*SAM3*" -or $cpu -like "STM32*")
 {
     $folder = Get-Location
     $folder = $folder -replace '\\', '/'
@@ -86,11 +84,11 @@ elseif ($platform -like "*SAM3*" -or $platform -like "*STM32*")
     -ex "monitor reset" `
     -ex "quit"
 }
-elseif ($platform -like "*MSP430*")
+elseif ($cpu -like "MSP430*")
 {
     $folder = Get-Location
     $folder = $folder -replace '\\', '/'
-    msp430-elf-gdb -batch `
+    & "$env:MSP_PATH/msp430-elf-gdb.exe" -batch `
     -ex "pwd" `
     -ex "target extended-remote ${server}:55000" `
     -ex "set confirm off" `
@@ -98,4 +96,31 @@ elseif ($platform -like "*MSP430*")
     -ex "load $folder/build/${name}.elf" `
     -ex "monitor reset" `
     -ex "quit"
+}
+elseif ($cpu -like "PIC10*" -or $cpu -like "PIC12*" -or $cpu -like "PIC16*" -or $cpu -like "PIC18*")
+{
+    if ($cpu -match "PIC32.*") {
+        $mcuLine = $matches[0].Substring(3)
+    }
+    $out = & "$env:PIC_PATH\mplab_platform\mplab_ipe\ipecmd.exe" -TPPK3 -P"$mcuLine" -F"build/$name.hex" -Y
+    if ($out.ToLower().Contains("Verify failed")) {
+        & "$env:PIC_PATH\mplab_platform\mplab_ipe\ipecmd.exe" -TPPK3 -P"$mcuLine" -F"build/$name.hex" -M
+    }
+}
+elseif ($cpu -like "PIC32*")
+{
+    if ($programmer -eq "jlink")
+    {
+
+    }
+    else {
+        if ($cpu -match "PIC32.*") {
+            $mcuLine = $matches[0].Substring(3)
+        }
+        $out = & "$env:PIC_PATH\mplab_platform\mplab_ipe\ipecmd.exe" -TPPK3 -P"$mcuLine" -F"build/$name.hex" -Y
+        if ($out.ToLower().Contains("Verify failed")) {
+            & "$env:PIC_PATH\mplab_platform\mplab_ipe\ipecmd.exe" -TPPK3 -P"$mcuLine" -F"build/$name.hex" -M
+        }
+    }
+    
 }

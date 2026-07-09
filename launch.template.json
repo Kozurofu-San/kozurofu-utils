@@ -16,7 +16,7 @@
                 "interface/stlink.cfg",
                 "target/"
             ],
-            "svdFile": "${workspaceRoot}/submodules/utils/svd/${config:cpu}.svd",
+            "svdFile": "${workspaceRoot}/submodules/utils/svd/",
             "showDevDebugOutput": "none",
             "swoConfig":{
                 "enabled":true,
@@ -115,7 +115,7 @@
             "miDebuggerPath": "msp430-elf-gdb",
             "svdPath": "${workspaceFolder}/submodules/utils/svd/${config:platform}.svd",
             "setupCommands": [
-                { "text": "target remote localhost:55000" },
+                { "text": "target remote localhost:2000" },
                 { "text": "set remote hardware-watchpoint-limit 2" },
                 { "text": "monitor halt" },
                 { "text": "flushregs" },
