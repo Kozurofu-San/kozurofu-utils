@@ -55,7 +55,7 @@ if ($cpu -like "ESP32*") {
         $folder = Get-Location
         $folder = $folder -replace '\\', '/'
         $gdb = "riscv32-esp-elf-gdb"
-        if ($cpu -match "ESP32" -or $cpu -match "ESP32S2" -or $cpu -match "ESP32S3")
+        if ($cpu -eq "ESP32" -or $cpu -eq "ESP32S2" -or $cpu -eq "ESP32S3")
         {
             $gdb = "xtensa-$($cpu.ToLower())-elf-gdb"
         }
@@ -71,7 +71,7 @@ if ($cpu -like "ESP32*") {
         -ex "quit"
     }
 }
-elseif ($cpu -like "*SAM3*" -or $cpu -like "STM32*")
+elseif ($cpu -like "*SAM*" -or $cpu -like "STM32*")
 {
     $folder = Get-Location
     $folder = $folder -replace '\\', '/'
@@ -97,7 +97,7 @@ elseif ($cpu -like "MSP430*")
     -ex "monitor reset" `
     -ex "quit"
 }
-elseif ($cpu -like "PIC10*" -or $cpu -like "PIC12*" -or $cpu -like "PIC16*" -or $cpu -like "PIC18*")
+elseif ($cpu -like "PIC1*")
 {
     Set-Location build
     if ($cpu -match "PIC32.*") {

@@ -6,62 +6,29 @@ param(
     [int] $log,
     [string] $build_system,
     [string] $programmer,
-    [string] $workspace_path
+    [string] $workspace_path,
+    [string] $server
 )
 
 $start_time = Get-Date
 $driver = ""
 
-# CMake check
-if (-not (Get-Command "cmake" -ErrorAction SilentlyContinue)) {
-    Write-Error "Install CMake https://cmake.org/download/ `
-    Add the environmental variable PATH. Execute: `
-    rundll32.exe sysdm.cpl,EditEnvironmentVariables"
-    exit
-}
+$rootDir = Get-Location
 
-# MSYS2 check
-if (-not $env:MSYS_PATH) {
-    Write-Error "Install MSYS2 https://www.msys2.org/ `
-    Add the environmental variable MSYS_PATH. Execute: `
-    rundll32.exe sysdm.cpl,EditEnvironmentVariables"
-    exit
-}
+Set-Location $PSScriptRoot
+./checkInstall.ps1 "msys" $server $workspace_path
+./checkInstall.ps1 "cmake" $server $workspace_path
 
-# OpenOCD check
-if (-not $env:OCD_PATH) {
-    Write-Error "Install Openocd https://github.com/xpack-dev-tools/openocd-xpack/releases `
-    Add the environmental variable OCD_PATH. Execute: `
-    rundll32.exe sysdm.cpl,EditEnvironmentVariables"
-}
-
-# Ninja check
 if ($build_system -eq "ninja")
 {
-    $ninjaPath = "$env:MSYS_PATH\mingw64\bin"
-    if (-not (Test-Path -Path "$ninjaPath\ninja.exe"))
-    {
-        Write-Error "Ninja at $ninjaPath is not found. Install https://packages.msys2.org/packages/mingw-w64-x86_64-ninja"
-    }
-    if ($env:Path -notlike "*$ninjaPath*")
-    {
-        $env:Path += ";$ninjaPath"
-    }
+    ./checkInstall.ps1 "msys" $server $workspace_path
+    $build_system_bin = "$env:MSYS_PATH/mingw64/bin/ninja.exe"
     $build_system_alias = "Ninja"
 }
-
-# Makefile check
-if ($build_system -eq "make")
+elseif ($build_system -eq "make")
 {
-    $makePath = "$env:MSYS_PATH\usr\bin"
-    if (-not (Test-Path -Path "$makePath\make.exe"))
-    {
-        Write-Error "Make at $makePath is not found. Install https://packages.msys2.org/packages/make"
-    }
-    if ($env:Path -notlike "*$makePath*")
-    {
-        $env:Path += ";$makePath"
-    }
+    ./checkInstall.ps1 "msys" $server $workspace_path
+    $build_system_bin = "$env:MSYS_PATH/usr/bin/make.exe"
     $build_system_alias = "MSYS Makefiles"
 }
 
@@ -84,6 +51,7 @@ function SetEnv {
 
 function Compile {
     cmake .. -G $build_system_alias `
+    -DCMAKE_MAKE_PROGRAM="$build_system_bin" `
     -DCMAKE_BUILD_TYPE="${build}" `
     -DPLATFORM_DRIVER="${driver}" `
     -DCMAKE_PROJECT_NAME="${project}" `
@@ -93,57 +61,40 @@ function Compile {
     -DBOARD="$board"  
 }
 
-$driver = ./submodules/utils/mcuGetDriver.ps1 $cpu
+$driver = ./mcuGetDriver.ps1 $cpu
 
+# Edit CUBEMX cmake file
 if ($cpu -like "*STM32*") 
 {
-    $filePath = Resolve-Path -Path "./platforms/${board}/cmake/stm32cubemx/CMakeLists.txt"
+    $filePath = Resolve-Path -Path "../../platforms/${board}/cmake/gcc-arm-none-eabi.cmake"
     if (-not (Test-Path -Path $filePath)) {
         Write-Error "File was not found: $filePath"
         exit 1
     }
 
     $content = Get-Content -Path $filePath -Raw
-
     if ($content -notmatch [regex]::Escape("PLATFORM_PATH")) {
-        $pattern = '\$\{CMAKE_SOURCE_DIR\}'
-        $replacement = "`${CMAKE_SOURCE_DIR}/`${PLATFORM_PATH}"
-        $newContent = $content -replace $pattern, $replacement
-        Set-Content -Path $filePath -Value $newContent -NoNewline
+        $content = $content.Replace("`${CMAKE_SOURCE_DIR}", "`${CMAKE_SOURCE_DIR}/`${PLATFORM_PATH}")
     }
-
-    $filePath = Resolve-Path -Path "./platforms/${board}/cmake/gcc-arm-none-eabi.cmake"
-    if (-not (Test-Path -Path $filePath)) {
-        Write-Error "File was not found: $filePath"
-        exit 1
+    if ($content -notmatch [regex]::Escape("`$ENV{ARM_PATH}")) {
+        $content = $content.Replace("arm-none-eabi", "`$ENV{ARM_PATH}/arm-none-eabi")
     }
-
-    $content = Get-Content -Path $filePath -Raw
-
-    if ($content -notmatch [regex]::Escape("PLATFORM_PATH")) {
-        $pattern = '\$\{CMAKE_SOURCE_DIR\}'
-        $replacement = "`${CMAKE_SOURCE_DIR}/`${PLATFORM_PATH}"
-        $newContent = $content -replace $pattern, $replacement
-        Set-Content -Path $filePath -Value $newContent -NoNewline
+    if ($content -notmatch [regex]::Escape("gcc.exe")) {
+        $content = $content.Replace("gcc)", "gcc.exe)")
     }
-
-    $filePath = Resolve-Path -Path "./platforms/${board}/cmake/stm32cubemx/CMakeLists.txt"
-    $targetString = '${CMAKE_SOURCE_DIR}/${PLATFORM_PATH}'
-
-    if (-not (Test-Path $filePath)) {
-        Write-Host "File was not found: $filePath"
-        exit 1
+    if ($content -notmatch [regex]::Escape("g++.exe")) {
+        $content = $content.Replace("g++)", "g++.exe)")
     }
-
-    $content = Get-Content $filePath -Raw
-
-    if ($content -notmatch [regex]::Escape($targetString)) {
-        $newContent = $content -replace '\$\{CMAKE_SOURCE_DIR\}', '$${CMAKE_SOURCE_DIR}/$${PLATFORM_PATH}'
-        $newContent | Set-Content $filePath -NoNewline
+    if ($content -notmatch [regex]::Escape("objcopy.exe")) {
+        $content = $content.Replace("objcopy)", "objcopy.exe)")
     }
-
+    if ($content -notmatch [regex]::Escape("size.exe")) {
+        $content = $content.Replace("size)", "size.exe)")
+    }
+    Set-Content -Path $filePath -Value $content -NoNewline
 }
 
+Set-Location $rootDir
 $build_folder = 'build'
 if (-not(Test-Path -Path $build_folder)) {
     mkdir $build_folder | Out-Null
@@ -154,7 +105,7 @@ Set-Location $build_folder
 
 switch -Wildcard ($cpu)
 {
-    "*ESP32*"
+    "ESP32*"
     {
         if (-not $env:IDF_PATH) {
             Write-Error "Install ESP32 toolchain https://dl.espressif.com/dl/eim/ `
@@ -192,25 +143,15 @@ switch -Wildcard ($cpu)
         break
     }
 
-    "*STM32*"
+    "STM32*"
     {
-        if (-not (Get-Command "arm-none-eabi-gcc" -ErrorAction SilentlyContinue)) {
-            Write-Error "Install ARM GNU toolchain https://gitlab.arm.com/tooling/gnu-toolchains-for-arm `
-            Add the environmental variable PATH. Execute: `
-            rundll32.exe sysdm.cpl,EditEnvironmentVariables"
-            exit
-        }
+        ../submodules/utils/checkInstall.ps1 "arm" $server $workspace_path
         Compile
     }
 
-    "*ATSAM*"
+    "*SAM*"
     {
-        if (-not (Get-Command "arm-none-eabi-gcc" -ErrorAction SilentlyContinue)) {
-            Write-Error "Install ARM GNU toolchain https://gitlab.arm.com/tooling/gnu-toolchains-for-arm `
-            Add the environmental variable PATH. Execute: `
-            rundll32.exe sysdm.cpl,EditEnvironmentVariables"
-            exit
-        }
+        ../submodules/utils/checkInstall.ps1 "arm" $server $workspace_path
         if (-not $env:ASF_PATH) {
             Write-Error "Install Atmel toolchain https://www.microchip.com/en-us/tools-resources/develop/libraries/advanced-software-framework `
             Add the environmental variable ASF_PATH. Execute: `
@@ -220,7 +161,7 @@ switch -Wildcard ($cpu)
         Compile
     }
 
-    "*PIC32*"
+    "PIC32*"
     {
         if (-not (Get-Command "xc32-gcc" -ErrorAction SilentlyContinue)) {
             Write-Error "Install PIC32 toolchain https://www.microchip.com/en-us/tools-resources/develop/mplab-xc-compilers/xc32 `
@@ -238,7 +179,7 @@ switch -Wildcard ($cpu)
         Compile
     }
 
-    "*MSP430*"
+    "MSP430*"
     {
         if (-not $env:MSP430_PATH) {
             Write-Error "Install MSP430 toolchain https://www.ti.com/tool/MSP430-GCC-OPENSOURCE#downloads `
@@ -249,7 +190,7 @@ switch -Wildcard ($cpu)
         Compile
     }
 
-    {$_ -like "*ATtiny*" -or $_ -like "*ATmega*" -or $_ -like "*ATxmega*"}
+    {$_ -like "ATtiny*" -or $_ -like "ATmega*" -or $_ -like "ATxmega*"}
     {
         if (-not $env:AVR_PATH) {
             Write-Error "Install MSP430 toolchain https://www.microchip.com/en-us/tools-resources/develop/microchip-studio/gcc-compilers `
@@ -260,7 +201,7 @@ switch -Wildcard ($cpu)
         Compile
     }
 
-    {$_ -like "*PIC10*" -or $_ -like "*PIC12*" -or $_ -like "*PIC16*" -or $_ -like "*PIC18*"}
+    "PIC1*"
     {
         if (-not (Get-Command "xc8-gcc" -ErrorAction SilentlyContinue))
         {
@@ -293,7 +234,7 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-& $build_system -j16
+& $build_system_bin -j16
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "$build_system_alias failed" -ForegroundColor Red
@@ -302,7 +243,7 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-if ($cpu -like "*ESP32*") { ninja size }
+if ($cpu -like "*ESP32*") { & $build_system_bin size }
 Set-Location $dir
 # idf.py size
 

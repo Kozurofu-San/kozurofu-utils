@@ -65,7 +65,7 @@
             "type": "cortex-debug",
             "runToEntryPoint": "main",
             "servertype": "external",
-            "gdbTarget": "${config:mcu_server}:2000",
+            "gdbTarget": "${config:server}:2000",
             "svdFile": "${workspaceRoot}/submodules/utils/svd/${config:cpu}.svd",
             "showDevDebugOutput": "none",
             "preLaunchTask": "Build",
@@ -78,7 +78,7 @@
             "request": "launch",
             "type": "cortex-debug",
             "servertype": "external",
-            "gdbTarget": "${config:mcu_server}:2000",
+            "gdbTarget": "${config:server}:2000",
             "svdFile": "${workspaceRoot}/submodules/utils/svd/${config:cpu}.svd",
             "showDevDebugOutput": "none",
             "overrideLaunchCommands": [
