@@ -27,7 +27,6 @@ if ($cpu -like "STM32*" -or $cpu -like "*SAM*")
         if ($cpuFrequencyFile -match 'CHIP_FREQ_CPU_MAX\s+\((\d+)UL\)') {
             $cpuFrequency = [int]$matches[1]
         }
-        $cfg = (Get-ChildItem -Path "$env:OCD_PATH/../openocd/scripts/target" -Filter "*$mcuLine*").Name;
     }
     elseif ($cpu -like "STM32*") {
         $cpuFrequencyFile = Get-Content "$boardPath/*.ioc" -Raw
@@ -37,7 +36,11 @@ if ($cpu -like "STM32*" -or $cpu -like "*SAM*")
         if ($cpu -match "STM32..") {
             $mcuLine = $matches[0].ToLower()
         }
-        $cfg = (Get-ChildItem -Path "$env:OCD_PATH/../openocd/scripts/target" -Filter "*$mcuLine*").Name;
+    }
+    if ($env:OCD_PATH) {
+        if (Test-Path -Path $env:OCD_PATH) {
+            $cfg = (Get-ChildItem -Path "$env:OCD_PATH/../openocd/scripts/target" -Filter "*$mcuLine*").Name;
+        }
     }
     return $swoFrequency, $cpuFrequency, $cfg
 }

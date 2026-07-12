@@ -32,23 +32,6 @@ elseif ($build_system -eq "make")
     $build_system_alias = "MSYS Makefiles"
 }
 
-function SetEnv {
-    param (
-        [string] $path
-    )
-    
-    $compiler_path = Get-ChildItem -Directory $path
-    $compiler_path = Get-ChildItem -Directory $compiler_path
-    $compiler_path = "$compiler_path\bin"
-    $currentPath = [Environment]::GetEnvironmentVariable("PATH", "User")
-    if (-not $currentPath.Contains($compiler_path))
-    {
-        $updatedPath = "$currentPath;$compiler_path;"
-        [Environment]::SetEnvironmentVariable("PATH", $updatedPath, "User")
-        Write-Host "Added environtment $compiler_path"
-    }
-}
-
 function Compile {
     cmake .. -G $build_system_alias `
     -DCMAKE_MAKE_PROGRAM="$build_system_bin" `
@@ -107,27 +90,16 @@ switch -Wildcard ($cpu)
 {
     "ESP32*"
     {
-        if (-not $env:IDF_PATH) {
-            Write-Error "Install ESP32 toolchain https://dl.espressif.com/dl/eim/ `
-            Add the environmental variable IDF_PATH. Execute: `
-            rundll32.exe sysdm.cpl,EditEnvironmentVariables"
-            exit
-        }
+        ../submodules/utils/checkInstall.ps1 "idf" $server $workspace_path
         $idf_exports = python "${ENV:IDF_PATH}/tools/activate.py" --export
-        try
-        {
+        try {
             . $idf_exports
         }
-        catch
-        {
+        catch {
             Write-Host $idf_exports
             Write-Warning "No IDF exports"
             exit 0
         }
-        SetEnv("$HOME/.espressif/tools/xtensa-esp-elf-gdb")
-        SetEnv("$HOME/.espressif/tools/riscv32-esp-elf-gdb")
-        SetEnv("$HOME/.espressif/tools/xtensa-esp-elf")
-        SetEnv("$HOME/.espressif/tools/riscv32-esp-elf")
         cmake .. -G $build_system_alias `
             -DCMAKE_BUILD_TYPE="${build}" `
             -DPLATFORM_DRIVER="${driver}" `
@@ -152,77 +124,39 @@ switch -Wildcard ($cpu)
     "*SAM*"
     {
         ../submodules/utils/checkInstall.ps1 "arm" $server $workspace_path
-        if (-not $env:ASF_PATH) {
-            Write-Error "Install Atmel toolchain https://www.microchip.com/en-us/tools-resources/develop/libraries/advanced-software-framework `
-            Add the environmental variable ASF_PATH. Execute: `
-            rundll32.exe sysdm.cpl,EditEnvironmentVariables"
-            exit
-        }
+        ../submodules/utils/checkInstall.ps1 "asf" $server $workspace_path
         Compile
     }
 
     "PIC32*"
     {
-        if (-not (Get-Command "xc32-gcc" -ErrorAction SilentlyContinue)) {
-            Write-Error "Install PIC32 toolchain https://www.microchip.com/en-us/tools-resources/develop/mplab-xc-compilers/xc32 `
-            Add the environmental variable PATH. Execute: `
-            rundll32.exe sysdm.cpl,EditEnvironmentVariables"
-            exit
-        }
-        if (-not $env:PIC_PATH) {
-            Write-Error "Install PIC10/12/16/18/24/32 IDE https://www.microchip.com/en-us/tools-resources/archives/mplab-ecosystem `
-            MPLAB v6.20 is the latest IDE that supports PICKIT3
-            Add the environmental variable PIC_PATH. Execute: `
-            rundll32.exe sysdm.cpl,EditEnvironmentVariables"
-            exit
-        }
+        ../submodules/utils/checkInstall.ps1 "pic"  $server $workspace_path
+        ../submodules/utils/checkInstall.ps1 "xc32" $server $workspace_path
         Compile
     }
 
     "MSP430*"
     {
-        if (-not $env:MSP430_PATH) {
-            Write-Error "Install MSP430 toolchain https://www.ti.com/tool/MSP430-GCC-OPENSOURCE#downloads `
-            Add the environmental variable MSP430_PATH. Execute: `
-            rundll32.exe sysdm.cpl,EditEnvironmentVariables"
-            exit
-        }
+        ../submodules/utils/checkInstall.ps1 "msp430" $server $workspace_path
         Compile
     }
 
-    {$_ -like "ATtiny*" -or $_ -like "ATmega*" -or $_ -like "ATxmega*"}
+    {$_ -like "*tiny*" -or $_ -like "*mega*"}
     {
-        if (-not $env:AVR_PATH) {
-            Write-Error "Install MSP430 toolchain https://www.microchip.com/en-us/tools-resources/develop/microchip-studio/gcc-compilers `
-            Add the environmental variable AVR_PATH. Execute: `
-            rundll32.exe sysdm.cpl,EditEnvironmentVariables"
-            exit
-        }
+        ../submodules/utils/checkInstall.ps1 "avr" $server $workspace_path
         Compile
     }
 
     "PIC1*"
     {
-        if (-not (Get-Command "xc8-gcc" -ErrorAction SilentlyContinue))
-        {
-            Write-Error "Install PIC8 toolchain https://www.microchip.com/en-us/tools-resources/develop/mplab-xc-compilers/xc8 `
-            Add the environmental variable PATH. Execute: `
-            rundll32.exe sysdm.cpl,EditEnvironmentVariables"
-            exit
-        }
-        if (-not $env:PIC_PATH) {
-            Write-Error "Install PIC10/12/16/18/24/32 IDE https://www.microchip.com/en-us/tools-resources/archives/mplab-ecosystem `
-            MPLAB v6.20 is the latest IDE that supports PICKIT3
-            Add the environmental variable PIC_PATH. Execute: `
-            rundll32.exe sysdm.cpl,EditEnvironmentVariables"
-            exit
-        }
+        ../submodules/utils/checkInstall.ps1 "pic" $server $workspace_path
+        ../submodules/utils/checkInstall.ps1 "xc8" $server $workspace_path
         Compile
     }
 
     default
     {
-        Write-Error "Wrong MCU"
+        Write-Error "Wrong CPU"
         exit
     }
 }
