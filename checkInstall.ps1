@@ -1,5 +1,5 @@
 param(
-    [string] $package = "pic",
+    [string] $package = "avrdude",
     [string] $server = "localhost",
     [string] $workspace_path = "C:/tools"
 )
@@ -119,6 +119,74 @@ function installPackageMsys {
     }
 }
 
+function installPackageZip {
+    [CmdletBinding()]
+    param (
+        [string] $name,
+        [string] $packageId,
+        [bool] $addPath = $true,
+        [uri] $url
+    )
+    $envName = "$($name.ToUpper())_PATH"
+    $envVar = (Get-Item "Env:$envName" -ErrorAction SilentlyContinue).Value
+    if (-not ($envVar -and (Test-Path -Path $envVar))) {
+        if (-not (Test-Path -Path "$workspace_path\$packageId")) {
+            $zip = "$env:USERPROFILE\Downloads\$packageId.zip"
+            $zipFound = Get-ChildItem "$env:USERPROFILE\Downloads" -File |
+                Where-Object Name -like "*$packageId*" |  Select-Object -First 1
+            if (-not $zipFound) {
+                Write-Host "Downloading $packageId..."
+                Invoke-WebRequest -Uri $url -OutFile $zip
+            }
+            $zipFound = Get-ChildItem "$env:USERPROFILE\Downloads" -File |
+                Where-Object Name -like "*$packageId*" |  Select-Object -First 1
+            if ($zipFound) {
+                Write-Host "Installing $packageId..."
+                if ($name -eq "avrdude") {
+                    Expand-Archive -Path $zipFound -DestinationPath "$workspace_path/$packageId" -Force
+                }
+            }
+            else {
+                Write-Warning "Download $packageId from"
+                Write-Warning "$url"
+                Write-Warning "And retry"
+                exit
+            }
+        }
+        addEnvironment "$($name.ToUpper())_PATH" "$workspace_path/$packageId"
+    }
+}
+
+function installPackageExe {
+    [CmdletBinding()]
+    param (
+        [string] $name,
+        [string] $packageId,
+        [bool] $addPath = $true,
+        [uri] $url
+    )
+    $envName = "$($name.ToUpper())_PATH"
+    $envVar = (Get-Item "Env:$envName" -ErrorAction SilentlyContinue).Value
+    if (-not ($envVar -and (Test-Path -Path $envVar))) {
+        $exe = "$env:USERPROFILE\Downloads\$packageId.exe"
+        if (-not (Test-Path -Path $exe)) {
+            Write-Host "Downloading $packageId..."
+            Invoke-WebRequest -Uri $url -OutFile $exe
+            if (-not (Test-Path -Path $exe)) {
+                Write-Warning "Download $packageId from"
+                Write-Warning "$url"
+                Write-Warning "And retry"
+                exit
+            }
+        }
+        if (Test-Path -Path $exe) {
+            Write-Host "Installing $packageId..."
+            Start-Process -FilePath $exe -ArgumentList "--prefix `"$workspace_path\$packageId`"" -Wait
+        }
+        addEnvironment "$($name.ToUpper())_PATH" "$workspace_path/$packageId"
+    }
+}
+
 function installPackage {
     [CmdletBinding()]
     param (
@@ -159,58 +227,6 @@ function installPackage {
                         addEnvironment "$($name.ToUpper())_PATH" "$workspace_path/$packageId\bin"
                     }
                 }
-            }
-        }
-
-        "asf" {
-            if (-not ($envVar -and (Test-Path -Path $envVar))) {
-                if (-not (Test-Path -Path "$workspace_path\$packageId")) {
-                    $url = "https://ww1.microchip.com/downloads/en/DeviceDoc/asf-standalone-archive-3.52.0.113.zip"
-                    $zip = "$env:USERPROFILE\Downloads\$packageId.zip"
-                    $zipFound = Get-ChildItem "$env:USERPROFILE\Downloads" -File |
-                        Where-Object Name -like "*$packageId*" |  Select-Object -First 1
-                    if (-not $zipFound) {
-                        Write-Host "Downloading ASF..."
-                        Invoke-WebRequest -Uri $url -OutFile $zip
-                    }
-                    if ($zipFound) {
-                        Write-Host "Installing ASF..."
-                        Expand-Archive -Path $zipFound -DestinationPath $workspace_path -Force
-                    }
-                    else {
-                        Write-Warning "Download $packageId from"
-                        Write-Warning "$url"
-                        Write-Warning "And retry"
-                        exit
-                    }
-                }
-                addEnvironment "$($name.ToUpper())_PATH" "$workspace_path/$packageId"
-            }
-        }
-
-        "avr" {
-            if (-not ($envVar -and (Test-Path -Path $envVar))) {
-                if (-not (Test-Path -Path "$workspace_path\$packageId")) {
-                    $url = "https://ww1.microchip.com/downloads/aemDocuments/documents/DEV/ProductDocuments/SoftwareTools/avr8-gnu-toolchain-4.0.0.52-win32.any.x86_64.zip"
-                    $zip = "$env:USERPROFILE\Downloads\$packageId.zip"
-                    $zipFound = Get-ChildItem "$env:USERPROFILE\Downloads" -File |
-                        Where-Object Name -like "*$packageId*" |  Select-Object -First 1
-                    if (-not $zipFound) {
-                        Write-Host "Downloading AVR toolchain..."
-                        Invoke-WebRequest -Uri $url -OutFile $zip
-                    }
-                    if ($zipFound) {
-                        Write-Host "Installing AVR toolchain..."
-                        Expand-Archive -Path $zipFound -DestinationPath $workspace_path -Force
-                    }
-                    else {
-                        Write-Warning "Download $packageId from"
-                        Write-Warning "$url"
-                        Write-Warning "And retry"
-                        exit
-                    }
-                }
-                addEnvironment "$($name.ToUpper())_PATH" "$workspace_path/$packageId"
             }
         }
 
@@ -256,38 +272,20 @@ function installPackage {
             }
         }
 
-        "msp430" {
-            if (-not ($envVar -and (Test-Path -Path $envVar))) {
-                $url = "https://dr-download.ti.com/software-development/ide-configuration-compiler-or-debugger/MD-LlCjWuAbzH/9.3.1.2/msp430-gcc-full-windows-installer-9.3.1.2.exe"
-                $exe = "$env:USERPROFILE\Downloads\$packageId.exe"
-                if (-not (Test-Path -Path $exe)) {
-                    Write-Host "Downloading MSP430 toolchain..."
-                    Invoke-WebRequest -Uri $url -OutFile $exe
-                    if (-not (Test-Path -Path $exe)) {
-                        Write-Warning "Download $packageId from"
-                        Write-Warning "$url"
-                        Write-Warning "And retry"
-                        exit
-                    }
-                }
-                if (Test-Path -Path $exe) {
-                    Write-Host "Installing MSP430 toolchain..."
-                    Start-Process -FilePath $exe -ArgumentList "--prefix `"$workspace_path\$packageId`"" -Wait
-                }
-                addEnvironment "$($name.ToUpper())_PATH" "$workspace_path/$packageId"
-            }
-        }
-
         "pic" {
             if (-not ($envVar -and (Test-Path -Path $envVar))) {
                 if (-not (Test-Path -Path "$workspace_path\$packageId")) {
-                    $url = "https://packs.download.microchip.com/Microchip.PIC32MX_DFP.1.7.380.atpack"
-                    $zip = "$env:USERPROFILE\Downloads\$packageId.zip"
+                    $url = "https://packs.download.microchip.com/"
                     $zipFound = Get-ChildItem "$env:USERPROFILE\Downloads" -File |
-                        Where-Object Name -like "*$packageId*" |  Select-Object -First 1
+                        Where-Object Name -like "*.atpack" |  Select-Object -First 1
                     if ($zipFound) {
                         Write-Host "Installing PIC DPF..."
-                        Expand-Archive -Path $zipFound -DestinationPath $workspace_path -Force
+                        if ($zipFound.Name -match '^(?<VENDOR>[^.]+)\.(?<DFP>.+?)\.(?<VER>\d+\.\d+\.\d+)\.atpack$') {
+                                $VENDOR = $Matches.VENDOR
+                                $DFP    = $Matches.DFP
+                                $VER    = $Matches.VER
+                        }
+                        Expand-Archive -Path $zipFound -DestinationPath $workspace_path\$packageId\$VENDOR\$DFP\$VER -Force
                     }
                     else {
                         Write-Warning "Download $packageId from"
@@ -311,50 +309,6 @@ function installPackage {
             # }
         }
 
-        "xc8" {
-             if (-not ($envVar -and (Test-Path -Path $envVar))) {
-                $url = "https://ww1.microchip.com/downloads/aemDocuments/documents/DEV/ProductDocuments/SoftwareTools/xc8-v4.00-full-install-windows-x64-installer.exe"
-                $exe = "$env:USERPROFILE\Downloads\$packageId.exe"
-                if (-not (Test-Path -Path $exe)) {
-                    Write-Host "Downloading XC32 GCC compiler..."
-                    Invoke-WebRequest -Uri $url -OutFile $exe
-                    if (-not (Test-Path -Path $exe)) {
-                        Write-Warning "Download $packageId from"
-                        Write-Warning "$url"
-                        Write-Warning "And retry"
-                        exit
-                    }
-                }
-                if (Test-Path -Path $exe) {
-                    Write-Host "Installing XC32 GCC compiler..."
-                    Start-Process -FilePath $exe -ArgumentList "--prefix `"$workspace_path\$packageId`"" -Wait
-                }
-                addEnvironment "$($name.ToUpper())_PATH" "$workspace_path/$packageId"
-            }
-        }
-
-        "xc32" {
-             if (-not ($envVar -and (Test-Path -Path $envVar))) {
-                $url = "https://ww1.microchip.com/downloads/aemDocuments/documents/DEV/ProductDocuments/SoftwareTools/xc32-v6.00-full-install-windows-x64-installer.exe"
-                $exe = "$env:USERPROFILE\Downloads\$packageId.exe"
-                if (-not (Test-Path -Path $exe)) {
-                    Write-Host "Downloading XC32 GCC compiler..."
-                    Invoke-WebRequest -Uri $url -OutFile $exe
-                    if (-not (Test-Path -Path $exe)) {
-                        Write-Warning "Download $packageId from"
-                        Write-Warning "$url"
-                        Write-Warning "And retry"
-                        exit
-                    }
-                }
-                if (Test-Path -Path $exe) {
-                    Write-Host "Installing XC32 GCC compiler..."
-                    Start-Process -FilePath $exe -ArgumentList "--prefix `"$workspace_path\$packageId`"" -Wait
-                }
-                addEnvironment "$($name.ToUpper())_PATH" "$workspace_path/$packageId"
-            }
-        }
-
         Default {}
     }
 }
@@ -368,19 +322,21 @@ $packageList = @{
     "make"      = { param($p) installPackageMsys   $p "make"                            $false }
     "gcc"       = { param($p) installPackageMsys   $p "mingw-w64-x86_64-gcc"            $false }
     "gdb"       = { param($p) installPackageMsys   $p "mingw-w64-x86_64-gdb"            $false }
+    "asf"       = { param($p) installPackageZip    $p "xdk-asf-3.52.0"                  $true  "https://ww1.microchip.com/downloads/en/DeviceDoc/asf-standalone-archive-3.52.0.113.zip" }
+    "avr"       = { param($p) installPackageZip    $p "avr8-gnu-toolchain-win32_x86_64" $true  "https://ww1.microchip.com/downloads/aemDocuments/documents/DEV/ProductDocuments/SoftwareTools/avr8-gnu-toolchain-4.0.0.52-win32.any.x86_64.zip"}
+    "avrdude"   = { param($p) installPackageZip    $p "avrdude"                         $true  "https://github.com/avrdudes/avrdude/releases/download/v8.2/avrdude-v8.2-windows-x64.zip"}
+    "ocd"       = { param($p) installPackageZip    $p "xpack-openocd-0.12.0-7"          $true  "https://github.com/xpack-dev-tools/openocd-xpack/releases/download/v0.12.0-7/xpack-openocd-0.12.0-7-win32-x64.zip" }
+    "stlink"    = { param($p) installPackageZip    $p "stlink"                          $true  "https://github.com/stlink-org/stlink/releases/download/v1.8.0/stlink-1.8.0-win32.zip" }
+    "libusb"    = { param($p) installPackageZip    $p "libusb"                          $true  "https://github.com/libusb/libusb/releases/download/v1.0.30/libusb-1.0.30.7z" }
+    "msp430"    = { param($p) installPackageExe    $p "msp430-gcc"                      $true  "https://dr-download.ti.com/software-development/ide-configuration-compiler-or-debugger/MD-LlCjWuAbzH/9.3.1.2/msp430-gcc-full-windows-installer-9.3.1.2.exe" }
+    "xc8"       = { param($p) installPackageExe    $p "xc8"                             $true  "https://ww1.microchip.com/downloads/aemDocuments/documents/DEV/ProductDocuments/SoftwareTools/xc8-v4.00-full-install-windows-x64-installer.exe" }
+    "xc32"      = { param($p) installPackageExe    $p "xc32"                            $true  "https://ww1.microchip.com/downloads/aemDocuments/documents/DEV/ProductDocuments/SoftwareTools/xc32-v6.00-full-install-windows-x64-installer.exe" }
+    "mplab"     = { param($p) installPackageExe    $p "mplab"                           $true  "https://www.microchip.com/content/dam/mchp/documents/DEV/ProductDocuments/SoftwareTools/MPLABX-v6.20-windows-installer.exe" }
     "arm"       = { param($p) installPackage       $p "arm-none-eabi"                   $true  }
-    "asf"       = { param($p) installPackage       $p "xdk-asf-3.52.0"                  $true  }
-    "avr"       = { param($p) installPackage       $p "avr8-gnu-toolchain-win32_x86_64" $true  }
     "idf"       = { param($p) installPackage       $p "esp-idf"                         $true  }
-    "msp430"    = { param($p) installPackage       $p "msp430-gcc"                      $true  }
     "pic"       = { param($p) installPackage       $p "pic-dfp"                         $true  }
-    "xc8"       = { param($p) installPackage       $p "xc8"                             $true  }
-    "xc32"      = { param($p) installPackage       $p "xc32"                            $true  }
-    "ocd"       = { param($p) installPackage       $p "openocd"                         $true  }
-    "stlink"    = { param($p) installPackage       $p "stlink"                          $true  }
     "jlink"     = { param($p) installPackage       $p "jlink"                           $true  }
     "vcpkg"     = { param($p) installPackage       $p "vcpkg"                           $true  }
-    "mplab"     = { param($p) installPackage       $p "mplab"                           $true  }
 }
 
 if ($PSVersionTable.PSVersion -lt [System.Version]"7.5.0") {

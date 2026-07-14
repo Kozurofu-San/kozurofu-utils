@@ -19,17 +19,27 @@ Set-Location $PSScriptRoot
 ./checkInstall.ps1 "msys" $server $workspace_path
 ./checkInstall.ps1 "cmake" $server $workspace_path
 
-if ($build_system -eq "ninja")
-{
+if ($build_system -eq "ninja") {
     ./checkInstall.ps1 "msys" $server $workspace_path
     $build_system_bin = "$env:MSYS_PATH/mingw64/bin/ninja.exe"
     $build_system_alias = "Ninja"
 }
-elseif ($build_system -eq "make")
-{
+elseif ($build_system -eq "make") {
     ./checkInstall.ps1 "msys" $server $workspace_path
     $build_system_bin = "$env:MSYS_PATH/usr/bin/make.exe"
     $build_system_alias = "MSYS Makefiles"
+}
+
+if ($programmer -eq "jlink") {
+    ./checkInstall.ps1 "jlink" $server $workspace_path
+}
+elseif ($cpu -like "STM32*" -or $cpu -like "*SAM*") {
+    ./checkInstall.ps1 "ocd" $server $workspace_path
+    ./checkInstall.ps1 "libusb" $server $workspace_path
+    ./checkInstall.ps1 "stlink" $server $workspace_path
+}
+elseif ($cpu -like "*tiny*" -or $cpu -like "*mega*") {
+    ./checkInstall.ps1 "avrdude" $server $workspace_path
 }
 
 function Compile {
@@ -47,8 +57,7 @@ function Compile {
 $driver = ./mcuGetDriver.ps1 $cpu
 
 # Edit CUBEMX cmake file
-if ($cpu -like "*STM32*") 
-{
+if ($cpu -like "STM32*") {
     $filePath = Resolve-Path -Path "../../platforms/${board}/cmake/gcc-arm-none-eabi.cmake"
     if (-not (Test-Path -Path $filePath)) {
         Write-Error "File was not found: $filePath"

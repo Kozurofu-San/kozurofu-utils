@@ -1,9 +1,9 @@
 import serial.tools.list_ports
 import numpy as np
 
-dev = np.array(["ESP32 JTAG" , "CH340" ])
-vid = np.array([0x303A       , 0x1A86  ], dtype=int)
-pid = np.array([0x1001       , 0x55D3  ], dtype=int)
+dev = np.array(["ESP32 JTAG" , "CH340" , "Arduino" ])
+vid = np.array([0x303A       , 0x1A86  , 0x2341    ], dtype=int)
+pid = np.array([0x1001       , 0x55D3  , 0x0043    ], dtype=int)
 
 def find_com_port():
     """
@@ -23,4 +23,7 @@ def find_com_port():
 
 if __name__ == "__main__":
     com_port, dev, vid, pid = find_com_port()
-    print(f"{com_port}")
+    print(com_port)
+    print(dev)
+    print(f"0x{vid:04X}")
+    print(f"0x{pid:04X}")

@@ -9,10 +9,10 @@ param(
 Set-Location $PSScriptRoot
 
 $jlink_swo = "$env:JLINK_PATH/JLinkSWOViewerCL.exe"
-$swoFrequency, $cpuFrequency, $cfg = ./mcuGetSpeed.ps1 $cpu $board $log
 
-if ($cpu -like "*STM32*" -or $cpu -like "*SAM*")
+if ($cpu -like "STM32*" -or $cpu -like "*SAM*")
 {
+    $swoFrequency, $cpuFrequency, $cfg = ./mcuGetSpeed.ps1 $cpu $board $log
     if ($programmer -eq "jlink")
     {
         & $jlink_swo -device $cpu -cpufreq $cpuFrequency -swofreq $swoFrequency -itmmask 0xF -outputfile "../../build/run.log"
@@ -23,7 +23,7 @@ if ($cpu -like "*STM32*" -or $cpu -like "*SAM*")
     }
 }
 
-if ($cpu -like "*ESP32*")
+if ($cpu -like "ESP32*" -or $cpu -like "*mega*")
 {
     python ./serial_parser.py $baudrate
 }

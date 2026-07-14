@@ -108,10 +108,37 @@ elseif ($cpu -like "PIC1*")
         & "$env:PIC_PATH\mplab_platform\mplab_ipe\ipecmd.exe" -TPPK3 -P"$mcuLine" -F"$name.hex" -M
     }
 }
+elseif ($cpu -like "*tiny*" -or $cpu -like "*mega*")
+{
+    $com, $dev = python .\submodules\utils\find_com_port.py
+    Write-Host $com $dev
+    Set-Location build
+
+    & $env:AVRDUDE_PATH/avrdude.exe `
+    -c arduino `
+    -P $com `
+    -b 115200 `
+        -p $cpu.ToLower() `
+        -U flash:v:$name.hex:i
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Firmware differs, programming..."
+
+        & $env:AVRDUDE_PATH/avrdude.exe `
+            -c arduino `
+            -P $com `
+            -b 115200 `
+            -p $cpu.ToLower() `
+            -D `
+            -U "flash:w:$name.hex:i"
+    }
+    else {
+        Write-Host "Firmware is already up to date."
+    }
+}
 elseif ($cpu -like "PIC32*")
 {
-    if ($programmer -eq "jlink")
-    {
+    if ($programmer -eq "jlink") {
 
     }
     else {
