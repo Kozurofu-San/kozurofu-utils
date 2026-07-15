@@ -1,5 +1,5 @@
 param(
-    [string] $package = "vcpkg",
+    [string] $package = "jlink",
     [string] $server = "localhost",
     [string] $workspace_path = "C:/tools"
 )
@@ -310,6 +310,32 @@ function installPackage {
         }
 
         "jlink" {
+            if ((-not $envVar) -or (-not (Get-Command "$envName/JLink.exe" -ErrorAction SilentlyContinue))) {
+                if (-not (Get-Command "$workspace_path/$packageId/JLink.exe" -ErrorAction SilentlyContinue)) {
+                    $url = "https://www.segger.com/downloads/jlink/JLink_Windows_x86_64.exe"
+                    $exe = Get-ChildItem "$env:USERPROFILE\Downloads" -File |
+                        Where-Object Name -like "*$packageId*" |  Select-Object -First 1
+                    if ($exe) {
+                        $exe = $exe.FullName
+                        $workspace_path = $workspace_path.Replace("/", "\")
+                        & $exe -InstDir="$workspace_path" -InstAllUsers=1 -UpdateExisting=1 -CreateStartMenuEntry=1 -CreateDesktopShortCut=0 -StartDLLUpdater=0 -Silent=0
+                        if (-$addPath) {
+                            addEnvironment "$($name.ToUpper())_PATH" "$workspace_path/$packageId"
+                        }
+                    }
+                    else {
+                        Start-Process $url
+                        Write-Warning "Download $packageId from"
+                        Write-Warning "$url"
+                        Write-Warning "And retry"
+                    }
+                }
+                if ((-not $envVar) -and (Get-Command "$workspace_path\$packageId\JLink.exe" -ErrorAction SilentlyContinue)) {
+                    if (-$addPath) {
+                        addEnvironment "$($name.ToUpper())_PATH" "$workspace_path/$packageId"
+                    }
+                }
+            }
             
         }
 
@@ -359,7 +385,7 @@ $packageList = @{
     "arm"       = { param($p) installPackage       $p "arm-none-eabi"                   $true  }
     "idf"       = { param($p) installPackage       $p "esp-idf"                         $true  }
     "pic"       = { param($p) installPackage       $p "pic-dfp"                         $true  }
-    "jlink"     = { param($p) installPackage       $p "jlink"                           $true  }
+    "jlink"     = { param($p) installPackage       $p "JLink"                           $true  }
     "vcpkg"     = { param($p) installPackage       $p "vcpkg"                           $true  }
 }
 
