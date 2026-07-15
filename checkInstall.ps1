@@ -1,5 +1,5 @@
 param(
-    [string] $package = "avrdude",
+    [string] $package = "vcpkg",
     [string] $server = "localhost",
     [string] $workspace_path = "C:/tools"
 )
@@ -307,6 +307,30 @@ function installPackage {
             #         addEnvironment "$($name.ToUpper())_PATH" "$workspace_path/$packageId"
             #     }
             # }
+        }
+
+        "jlink" {
+            
+        }
+
+        "vcpkg" {
+            if (-not ($envVar -and (Test-Path -Path $envVar))) {
+                if (-not (Test-Path -Path $workspace_path/$packageId)) {
+                    $url = "https://github.com/microsoft/vcpkg.git"
+                    git clone --recurse-submodules $url "$workspace_path/$packageId"
+                    addEnvironment "$($name.ToUpper())_PATH" "$workspace_path/$packageId"
+                }
+            }
+            if (-not $envVar -and (Test-Path -Path $workspace_path/$packageId)){
+                addEnvironment "$($name.ToUpper())_PATH" "$workspace_path/$packageId"
+            }
+            if (-not (Test-Path -Path "$workspace_path/$packageId/packages/sdl2_x64-mingw-static/share/sdl2"))
+            {
+                Write-Host "Installation sdl2"
+                Set-Location "$workspace_path/$packageId"
+                ./bootstrap-vcpkg.bat
+                ./vcpkg.exe install sdl2 --triplet x64-mingw-static --host-triplet x64-mingw-static
+            }
         }
 
         Default {}

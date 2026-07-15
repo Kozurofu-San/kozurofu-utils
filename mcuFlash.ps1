@@ -110,6 +110,8 @@ elseif ($cpu -like "PIC1*")
 }
 elseif ($cpu -like "*tiny*" -or $cpu -like "*mega*")
 {
+    Get-Process -Name "python" -ErrorAction SilentlyContinue | Stop-Process -Force
+    
     $com, $dev = python .\submodules\utils\find_com_port.py
     Write-Host $com $dev
     Set-Location build

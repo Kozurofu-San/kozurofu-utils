@@ -1,48 +1,14 @@
-param([string] $build = "Debug")
+param([string] $build = "Debug", [string] $server = "localhost", [string] $workspace_path = "C:/tools")
 
-# Compiler check
-$compilerPath1 = "$env:MSYS_PATH\ucrt64\bin"
-$compilerPath2 = "$env:MSYS_PATH\mingw64\bin"
-if (Test-Path -Path "$compilerPath1\gcc.exe")
-{
-    $compilerPath = $compilerPath1
-}
-elseif (Test-Path -Path "$compilerPath2\gcc.exe")
-{
-    $compilerPath = $compilerPath2
-}
-else
-{
-    Write-Error "Compiler at $compilerPath1 and $compilerPath2 is not found. Install https://www.msys2.org/"
-}
-
-# Debugger check
-$debuggerPath = "$env:MSYS_PATH\mingw64\bin\gdb.exe"
-if (-not (Test-Path -Path $debuggerPath))
-{
-    Write-Error "Debugger at $debuggerPath is not found. Install https://packages.msys2.org/packages/mingw-w64-x86_64-gdb"
-    exit 1
-}
+Set-Location $PSScriptRoot
+./checkInstall.ps1 "gcc" $server $workspace_path
+./checkInstall.ps1 "gdb" $server $workspace_path
+$compilerPath = "$env:MSYS_PATH\mingw64\bin"
 $env:PATH=";$compilerPath;$env:PATH"
+./checkInstall.ps1 "vcpkg" $server $workspace_path
+Set-Location $PSScriptRoot
 
-$filePath = "C:/vcpkg"
-if (-not (Test-Path -Path $filePath))
-{
-    Write-Host "Installation vcpkg from https://github.com/microsoft/vcpkg.git"
-    git clone https://github.com/microsoft/vcpkg.git "C:/vcpkg"
-}
-
-$filePath = "C:/vcpkg/packages/sdl2_x64-mingw-static/share/sdl2"
-if (-not (Test-Path -Path $filePath))
-{
-    Write-Host "Installation sdl2"
-    Set-Location "C:/vcpkg"
-    ./bootstrap-vcpkg.bat
-    ./vcpkg.exe install sdl2 --triplet x64-mingw-static --host-triplet x64-mingw-static
-}
-
-# $path = Resolve-Path -Path "./lv_port_pc_vscode"
-# Set-Location $path
+$filePath = "$env:VCPKG_PATH/packages/sdl2_x64-mingw-static/share/sdl2"
 
 $start_time = Get-Date
 $dir = Get-Location
