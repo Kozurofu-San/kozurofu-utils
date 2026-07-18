@@ -1,5 +1,5 @@
 param(
-    [string] $package = "avr",
+    [string] $package = "arm",
     [string] $server = "localhost",
     [string] $workspace_path = "C:/tools"
 )
@@ -230,7 +230,7 @@ function installPackage {
                 }
                 if ((-not $envVar) -and (Get-Command "$workspace_path\$packageId\bin\arm-none-eabi-gcc.exe" -ErrorAction SilentlyContinue)) {
                     if (-$addPath) {
-                        addEnvironment "$($name.ToUpper())_PATH" "$workspace_path/$packageId\bin"
+                        addEnvironment "PATH" "$workspace_path/$packageId/bin"
                     }
                 }
             }

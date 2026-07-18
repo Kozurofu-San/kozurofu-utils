@@ -16,8 +16,8 @@
                 "interface/stlink.cfg",
                 "target/"
             ],
-            "svdFile": "${workspaceRoot}/submodules/utils/svd/",
-            "showDevDebugOutput": "none",
+            "svdFile": "./submodules/utils/svd/",
+            "showDevDebugOutput": "raw",
             "swoConfig":{
                 "enabled":true,
                 "source":"probe",
@@ -54,8 +54,6 @@
                 "adapter speed 4000"
             ],
             "postLaunchCommands": ["-enable-pretty-printing"],
-            "preLaunchTask": "Build",
-            "postDebugTask": "MCU Continue"
         },
         {
             "name": "Debug",

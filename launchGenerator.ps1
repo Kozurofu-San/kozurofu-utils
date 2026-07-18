@@ -41,16 +41,16 @@ if ($cpu -like "STM32*" -or $cpu -like "*SAM*")
     }
     $svd = (Get-ChildItem -Path "svd" -Filter "*$mcuLine*").Name;
 
-    $arm.svdFile = "${workspaceRoot}/submodules/utils/svd/$svd"
+    $arm.svdFile = "`${workspaceRoot}/submodules/utils/svd/$svd"
 
     if ($programmer -eq "jlink") {
         $arm.servertype = "jlink"
-        $arm.serverpath = "${env:JLINK_PATH}/JLinkGDBServerCL.exe"
+        $arm.serverpath = "`${env:JLINK_PATH}/JLinkGDBServerCL.exe"
         $arm.name = "J-LINK"
     }
     else {
         $arm.servertype = "openocd"
-        $arm.serverpath = "${env:OCD_PATH}/openocd.exe"
+        $arm.serverpath = "`${env:OCD_PATH}/openocd.exe"
         $arm.name = "ST-LINK"
     }
 }

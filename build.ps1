@@ -68,21 +68,7 @@ if ($cpu -like "STM32*") {
     if ($content -notmatch [regex]::Escape("PLATFORM_PATH")) {
         $content = $content.Replace("`${CMAKE_SOURCE_DIR}", "`${CMAKE_SOURCE_DIR}/`${PLATFORM_PATH}")
     }
-    if ($content -notmatch [regex]::Escape("`$ENV{ARM_PATH}")) {
-        $content = $content.Replace("arm-none-eabi", "`$ENV{ARM_PATH}/arm-none-eabi")
-    }
-    if ($content -notmatch [regex]::Escape("gcc.exe")) {
-        $content = $content.Replace("gcc)", "gcc.exe)")
-    }
-    if ($content -notmatch [regex]::Escape("g++.exe")) {
-        $content = $content.Replace("g++)", "g++.exe)")
-    }
-    if ($content -notmatch [regex]::Escape("objcopy.exe")) {
-        $content = $content.Replace("objcopy)", "objcopy.exe)")
-    }
-    if ($content -notmatch [regex]::Escape("size.exe")) {
-        $content = $content.Replace("size)", "size.exe)")
-    }
+    
     Set-Content -Path $filePath -Value $content -NoNewline
 }
 

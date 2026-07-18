@@ -39,7 +39,7 @@ if ($cpu -like "STM32*" -or $cpu -like "*SAM*")
     }
     if ($env:OCD_PATH) {
         if (Test-Path -Path $env:OCD_PATH) {
-            $cfg = (Get-ChildItem -Path "$env:OCD_PATH/../openocd/scripts/target" -Filter "*$mcuLine*").Name;
+            $cfg = (Get-ChildItem -Path "$env:OCD_PATH/openocd/scripts/target" -Filter "*$mcuLine*").Name;
         }
     }
     return $swoFrequency, $cpuFrequency, $cfg
