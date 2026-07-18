@@ -15,11 +15,12 @@ def read_from_serial(ser, port='COM3', baudrate=115200):
                     now = datetime.now()
                     current_time = now.strftime("%m/%d/%Y %H:%M:%S:%f")
                     if line.startswith("I:"):
-                        print("\033[92m {}\033[00m" .format(current_time + " -- Info:  " + line[2:]))
+                        # print("\033[92m {}\033[00m" .format(current_time + " -- Info:  " + line[2:]))   # Green
+                        print("{}" .format(current_time + " -- Info:  " + line[2:]))                    # White
                     elif line.startswith("W:"):
-                        print("\033[93m {}\033[00m" .format(current_time + " -- Warn:  " + line[2:]))
+                        print("\033[93m {}\033[00m" .format(current_time + " -- Warn:  " + line[2:]))   # Yellow
                     elif line.startswith("E:"):
-                        print("\033[91m {}\033[00m" .format(current_time + " -- Error: " + line[2:]))
+                        print("\033[91m {}\033[00m" .format(current_time + " -- Error: " + line[2:]))   # Red
                     else:
                         print(current_time + " --- " + line)
             except UnicodeDecodeError:

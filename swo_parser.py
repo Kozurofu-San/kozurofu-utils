@@ -65,11 +65,12 @@ class Stream:
         current_time = now.strftime("%m/%d/%Y %H:%M:%S:%f")
 
         if self.id == 0:
-            print("\033[92m {}\033[00m" .format(current_time + " --- " + s))
+            # print("\033[92m {}\033[00m" .format(current_time + " --- " + s))    # Green
+            print("{}" .format(current_time + " --- " + s))                     # White
         if self.id == 1:
-            print("\033[93m {}\033[00m" .format(current_time + " --- " + s))
+            print("\033[93m {}\033[00m" .format(current_time + " --- " + s))    # Yellow
         if self.id == 2:
-            print("\033[91m {}\033[00m" .format(current_time + " --- " + s))
+            print("\033[91m {}\033[00m" .format(current_time + " --- " + s))    # Red
         if self.tcl_socket is not None:
             self.tcl_socket.sendall(b'puts "' + s.encode('utf-8') + b'"\r\n\x1a')
         
