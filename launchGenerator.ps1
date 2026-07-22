@@ -2,7 +2,7 @@ param(
     [string] $cpu = "ATSAM3X8E",
     [string] $board = "arduino-due",
     [int] $log = 1,
-    [string] $programmer,
+    [string] $programmer = "jlink",
     [string] $workspace_path
 )
 
@@ -14,6 +14,8 @@ if (Test-Path -Path "$PSScriptRoot/../../submodules/lvgl" -PathType Container) {
 }
 
 $launch = Get-Content launch.template.json -Raw | ConvertFrom-Json
+
+# ARM
 if ($cpu -like "STM32*" -or $cpu -like "*SAM*")
 {
     $allowed += @("ARM", "Debug", "Debug continue")
@@ -53,7 +55,11 @@ if ($cpu -like "STM32*" -or $cpu -like "*SAM*")
         $arm.serverpath = "`${env:OCD_PATH}/openocd.exe"
         $arm.name = "ST-LINK"
     }
+    $dbg = $launch.configurations | Where-Object name -eq 'Debug continue'
+    $dbg.overrideLaunchCommands[0] = "monitor go"
 }
+
+# ESP32
 elseif ($cpu -like "ESP32*")
 {
     $allowed += @("ESP32")
@@ -70,6 +76,8 @@ elseif ($cpu -like "ESP32*")
     $esp = $launch.configurations | Where-Object name -eq 'ESP32'
     $esp.miDebuggerPath = $gdb
 }
+
+# MSP430
 elseif ($cpu -like "MSP430*")
 {
     $allowed += @("MSP430")
@@ -79,6 +87,8 @@ elseif ($cpu -like "MSP430*")
         }
     )
 }
+
+# PIC32
 elseif ($cpu -like "PIC32*")
 {
     

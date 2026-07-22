@@ -13,7 +13,7 @@ $driverPath = "$PSScriptRoot/../../submodules/drivers/platforms/$driver"
 if ($cpu -like "STM32*" -or $cpu -like "*SAM*")
 {
     $swoFrequencyFile = Get-Content "$driverPath/LogDriver.h" -Raw
-    if ($swoFrequencyFile -match 'StLinkV2MaxSpeed\s*=\s*(\d+)\s*;') {
+    if ($swoFrequencyFile -match 'ItmBaudrate\s*=\s*(\d+)\s*;') {
         $swoFrequency = [uint32]$matches[1]
     }
     if ($cpu -like "*SAM*") {

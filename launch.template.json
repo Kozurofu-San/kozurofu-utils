@@ -53,7 +53,7 @@
             "openOCDLaunchCommands": [
                 "adapter speed 4000"
             ],
-            "postLaunchCommands": ["-enable-pretty-printing"],
+            "postLaunchCommands": ["-enable-pretty-printing"]
         },
         {
             "name": "Debug",
