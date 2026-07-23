@@ -12,9 +12,13 @@ $driverPath = "$PSScriptRoot/../../submodules/drivers/platforms/$driver"
 
 if ($cpu -like "STM32*" -or $cpu -like "*SAM*")
 {
-    $swoFrequencyFile = Get-Content "$driverPath/LogDriver.h" -Raw
+    $swoFrequencyFile = Get-Content "$driverPath/ItmDriver.h" -Raw
     if ($swoFrequencyFile -match 'ItmBaudrate\s*=\s*(\d+)\s*;') {
         $swoFrequency = [uint32]$matches[1]
+    }
+    else {
+        Write-Warning "ITM frequency isn't set. Write in ItmDriver.h:"
+        Write-Warning "static constexpr uint32_t ItmBaudrate = 2250000;"
     }
     if ($cpu -like "*SAM*") {
         if ($cpu -match "SAM..") {

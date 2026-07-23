@@ -17,7 +17,7 @@
                 "target/"
             ],
             "svdFile": "./submodules/utils/svd/",
-            "showDevDebugOutput": "raw",
+            "showDevDebugOutput": "none",
             "swoConfig":{
                 "enabled":true,
                 "source":"probe",
