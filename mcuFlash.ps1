@@ -116,7 +116,7 @@ elseif ($cpu -like "*tiny*" -or $cpu -like "*mega*")
     Write-Host $com $dev
     Set-Location build
 
-    & $env:AVRDUDE_PATH/avrdude.exe `
+    & $env:AVRDUDE_PATH/bin/avrdude.exe `
     -c arduino `
     -P $com `
     -b 115200 `
@@ -126,7 +126,7 @@ elseif ($cpu -like "*tiny*" -or $cpu -like "*mega*")
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Firmware differs, programming..."
 
-        & $env:AVRDUDE_PATH/avrdude.exe `
+        & $env:AVRDUDE_PATH/bin/avrdude.exe `
             -c arduino `
             -P $com `
             -b 115200 `

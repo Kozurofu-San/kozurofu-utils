@@ -138,6 +138,7 @@ switch -Wildcard ($cpu)
 
     {$_ -like "*tiny*" -or $_ -like "*mega*"}
     {
+        $env:Path = "$env:AVR_PATH\bin;$env:Path"   # cc1 is had to be PATH env
         ../submodules/utils/checkInstall.ps1 "avr" $server $workspace_path
         Compile
     }

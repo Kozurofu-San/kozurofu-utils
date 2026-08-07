@@ -1,5 +1,5 @@
 param(
-    [string] $package = "arm",
+    [string] $package = "avrdude",
     [string] $server = "localhost",
     [string] $workspace_path = "C:/tools"
 )
@@ -35,9 +35,12 @@ function addEnvironment {
         }
     }
     else {
-        [Environment]::SetEnvironmentVariable("$name", "$value", "User")
-        Set-Item "Env:$name" "$value"
-        Write-Host "Added environment $name = $((Get-Item "Env:$name").Value)"
+        $currentEnv = [Environment]::GetEnvironmentVariable("$name", "User")
+        if ($currentEnv -ne $value) {
+            [Environment]::SetEnvironmentVariable("$name", "$value", "User")
+            Set-Item "Env:$name" "$value"
+            Write-Host "Added environment $name = $((Get-Item "Env:$name").Value)"
+        }
     }
 }
 
@@ -109,19 +112,27 @@ function installPackageMsys {
         Write-Error "MSYS2 isn't installed"
         exit
     }
-    if ($addPath) {
-        $envName = "$($name.ToUpper())_PATH"
-        $envVar = (Get-Item "Env:$envName" -ErrorAction SilentlyContinue).Value
-        if (-not ($envVar -and (Test-Path -Path $envVar))) {}
-
-    }
-    & "$env:MSYS_PATH\usr\bin\pacman.exe" -Q $packageId *> $null
+    # if ($addPath) {
+    #     $envName = "$($name.ToUpper())_PATH"
+    #     $envVar = (Get-Item "Env:$envName" -ErrorAction SilentlyContinue).Value
+    #     # if (-not ($envVar -and (Test-Path -Path $envVar))) {
+    #     #     if ($name -eq "avr") { addEnvironment $envName $env:MSYS_PATH/ucrt }
+    #     # }
+    # }
+    & "$env:MSYS_PATH/usr/bin/pacman.exe" -Q $packageId *> $null
     if ($LASTEXITCODE) {
         & "$env:MSYS_PATH/usr/bin/pacman.exe" -S --noconfirm $packageId
     }
+    if ($name -eq "avr") { 
+        & "$env:MSYS_PATH/usr/bin/pacman.exe" -Q "mingw-w64-ucrt-x86_64-avr-libc" *> $null
+        if ($LASTEXITCODE) {
+            & "$env:MSYS_PATH/usr/bin/pacman.exe" -S --noconfirm "mingw-w64-ucrt-x86_64-avr-libc"
+        }
+    }
     if ($addPath) {
         $envName = "$($name.ToUpper())_PATH"
-        addEnvironment $envName $workspace_path/$name
+        if ($name -eq "avr") { addEnvironment $envName $env:MSYS_PATH/ucrt64 }
+        if ($name -eq "avrdude") { addEnvironment $envName $env:MSYS_PATH/ucrt64 }
     }
 }
 
@@ -378,8 +389,8 @@ $packageList = @{
     "make"      = { param($p) installPackageMsys   $p "make"                            $false }
     "gcc"       = { param($p) installPackageMsys   $p "mingw-w64-x86_64-gcc"            $false }
     "gdb"       = { param($p) installPackageMsys   $p "mingw-w64-x86_64-gdb"            $false }
-    "avr"       = { param($p) installPackageMsys   $p "mingw-w64-ucrt-x86_64-avr-gcc"   $false }
-    "avrdude"   = { param($p) installPackageMsys   $p "mingw-w64-ucrt-x86_64-avr-libc"  $false }
+    "avr"       = { param($p) installPackageMsys   $p "mingw-w64-ucrt-x86_64-avr-gcc"   $true  }
+    "avrdude"   = { param($p) installPackageMsys   $p "mingw-w64-ucrt-x86_64-avrdude"   $true }
     "asf"       = { param($p) installPackageZip    $p "xdk-asf-3.52.0"                  $true  "https://ww1.microchip.com/downloads/en/DeviceDoc/asf-standalone-archive-3.52.0.113.zip" }
     # "avr"       = { param($p) installPackageZip    $p "avr8-gnu-toolchain-win32_x86_64" $true  "https://ww1.microchip.com/downloads/aemDocuments/documents/DEV/ProductDocuments/SoftwareTools/avr8-gnu-toolchain-4.0.0.52-win32.any.x86_64.zip"}
     # "avrdude"   = { param($p) installPackageZip    $p "avrdude"                         $true  "https://github.com/avrdudes/avrdude/releases/download/v8.2/avrdude-v8.2-windows-x64.zip"}
