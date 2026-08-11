@@ -9,13 +9,15 @@ param(
 Set-Location $PSScriptRoot
 
 $jlink_swo = "$env:JLINK_PATH/JLinkSWOViewerCL.exe"
+$jlink_rtt = "$env:JLINK_PATH/JLinkRTTClient.exe"
 
 if ($cpu -like "STM32*" -or $cpu -like "*SAM*")
 {
     $swoFrequency, $cpuFrequency, $cfg = ./mcuGetSpeed.ps1 $cpu $board $log
     if ($programmer -eq "jlink")
     {
-        & $jlink_swo -device $cpu -cpufreq $cpuFrequency -swofreq $swoFrequency -itmmask 0xF -outputfile "../../build/run.log"
+        # & $jlink_swo -device $cpu -cpufreq $cpuFrequency -swofreq $swoFrequency -itmmask 0xF -outputfile "../../build/run.log"
+        & $jlink_rtt 
     }
     else
     {

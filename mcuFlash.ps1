@@ -120,8 +120,8 @@ elseif ($cpu -like "*tiny*" -or $cpu -like "*mega*")
     -c arduino `
     -P $com `
     -b 115200 `
-        -p $cpu.ToLower() `
-        -U flash:v:$name.hex:i
+    -p $cpu.ToLower() `
+    -U flash:v:$name.hex:i
 
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Firmware differs, programming..."

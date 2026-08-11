@@ -48,11 +48,14 @@ if ($cpu -like "STM32*" -or $cpu -like "*SAM*")
     if ($programmer -eq "jlink") {
         $arm.servertype = "jlink"
         $arm.serverpath = "`${env:JLINK_PATH}/JLinkGDBServerCL.exe"
+        $arm.interface = "jtag"
+        $arm.PSObject.Properties.Remove("swoConfig")
         $arm.name = "J-LINK"
     }
     else {
         $arm.servertype = "openocd"
         $arm.serverpath = "`${env:OCD_PATH}/openocd.exe"
+        $arm.interface = "swd"
         $arm.name = "ST-LINK"
     }
     $dbg = $launch.configurations | Where-Object name -eq 'Debug continue'
