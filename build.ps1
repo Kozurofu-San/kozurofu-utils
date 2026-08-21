@@ -20,12 +20,12 @@ Set-Location $PSScriptRoot
 ./checkInstall.ps1 "cmake" $server $workspace_path
 
 if ($build_system -eq "ninja") {
-    ./checkInstall.ps1 "msys" $server $workspace_path
+    ./checkInstall.ps1 "ninja" $server $workspace_path
     $build_system_bin = "$env:MSYS_PATH/mingw64/bin/ninja.exe"
     $build_system_alias = "Ninja"
 }
 elseif ($build_system -eq "make") {
-    ./checkInstall.ps1 "msys" $server $workspace_path
+    ./checkInstall.ps1 "make" $server $workspace_path
     $build_system_bin = "$env:MSYS_PATH/usr/bin/make.exe"
     $build_system_alias = "MSYS Makefiles"
 }

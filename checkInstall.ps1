@@ -1,5 +1,5 @@
 param(
-    [string] $package = "avrdude",
+    [string] $package = "ninja",
     [string] $server = "localhost",
     [string] $workspace_path = "C:/tools"
 )
