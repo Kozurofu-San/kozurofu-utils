@@ -54,7 +54,7 @@ if ($cpu -like "STM32*" -or $cpu -like "*SAM*")
     }
     else {
         $arm.servertype = "openocd"
-        $arm.serverpath = "`${env:OCD_PATH}/openocd.exe"
+        $arm.serverpath = "`${env:OCD_PATH}/bin/openocd"
         $arm.interface = "swd"
         $arm.name = "ST-LINK"
     }

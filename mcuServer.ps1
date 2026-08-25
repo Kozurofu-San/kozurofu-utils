@@ -13,7 +13,7 @@ if (-not (Test-Path -Path $jlink_gdb -PathType Leaf) -and ($programmer -eq "jlin
     pause
     exit
 }
-$openocd = "${env:OCD_PATH}/openocd.exe"
+$openocd = "${env:OCD_PATH}/bin/openocd.exe"
 if (-not (Test-Path -Path $openocd -PathType Leaf) -and ($programmer -ne "jlink"))
 {
     Write-Error "OpenOCD isn't installed"
@@ -22,9 +22,9 @@ if (-not (Test-Path -Path $openocd -PathType Leaf) -and ($programmer -ne "jlink"
 }
 Stop-Process -Name openocd -ErrorAction SilentlyContinue
 
-$gdb         = $port.ToString()
-$tcl_port    = ($port+1).ToString()
-$telnet_port = ($port+2).ToString()
+$gdb         = ($port + 0).ToString()
+$tcl_port    = ($port + 1).ToString()
+$telnet_port = ($port + 2).ToString()
 
 $swoFrequency, $cpuFrequency, $cfg = ./mcuGetSpeed.ps1 $cpu $board $log
 

@@ -1,6 +1,6 @@
 param(
-    [string] $cpu = "ATSAM3X8E",
-    [string] $board = "arduino-due",
+    [string] $cpu = "STM32F103C8",
+    [string] $board = "blue-pill",
     [int] $log = 1
 )
 

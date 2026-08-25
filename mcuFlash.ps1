@@ -1,4 +1,10 @@
-param([string] $cpu = "ESP32", [string] $name, [string] $programmer, [string] $server='localhost', [int] $port=2000)
+param(
+    [string] $cpu = "ESP32",
+    [string] $name,
+    [string] $programmer,
+    [string] $server='localhost',
+    [int] $port=2000
+)
 
 if ($cpu -like "ESP32*") {
     
@@ -73,16 +79,31 @@ if ($cpu -like "ESP32*") {
 }
 elseif ($cpu -like "*SAM*" -or $cpu -like "STM32*")
 {
-    $folder = Get-Location
-    $folder = $folder -replace '\\', '/'
-    arm-none-eabi-gdb -batch `
-    -ex "pwd" `
-    -ex "target extended-remote ${server}:2000" `
-    -ex "set confirm off" `
-    -ex "monitor reset halt" `
-    -ex "load $folder/build/${name}.elf" `
-    -ex "monitor reset" `
-    -ex "quit"
+    if ($programmer -eq "jlink") {
+        // TODO: Implement the same
+    }
+    else {
+        $folder = Get-Location
+        $folder = $folder -replace '\\', '/'
+        if (Get-Process -Name "openocd" -ErrorAction SilentlyContinue) {
+            arm-none-eabi-gdb -batch `
+            -ex "pwd" `
+            -ex "target extended-remote ${server}:2000" `
+            -ex "set confirm off" `
+            -ex "monitor reset halt" `
+            -ex "load $folder/build/${name}.elf" `
+            -ex "monitor reset" `
+            -ex "quit"
+        } else {
+            $target = ./submodules/utils/mcuGetSpeed.ps1 | Select-Object -Index 2
+            & ${env:OCD_PATH}/bin/openocd `
+                -c "set CHIPNAME $cpu" `
+                -f interface\\stlink.cfg `
+                -f target\\$target `
+                -c "init; reset init;" `
+                -c "if {[catch {verify_image $folder/build/${name}.elf}]} { program $folder/build/${name}.elf verify reset exit } else { echo `"Image matches! Skipping flash.`"; reset run; exit }"
+        }
+    }
 }
 elseif ($cpu -like "MSP430*")
 {

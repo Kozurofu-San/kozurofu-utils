@@ -1,7 +1,7 @@
 param(
-    [string] $package = "ninja",
+    [string] $package = "stlink",
     [string] $server = "localhost",
-    [string] $workspace_path = "C:/tools"
+    [string] $workspace_path = "D:/tools"
 )
 
 if (-not $workspace_path)
@@ -148,7 +148,8 @@ function installPackageZip {
     $envVar = (Get-Item "Env:$envName" -ErrorAction SilentlyContinue).Value
     if (-not ($envVar -and (Test-Path -Path $envVar))) {
         if (-not (Test-Path -Path "$workspace_path\$packageId")) {
-            $zip = "$env:USERPROFILE\Downloads\$packageId.zip"
+            $extension = [System.IO.Path]::GetExtension($url.AbsolutePath)
+            $zip = "$env:USERPROFILE\Downloads\$packageId$extension"
             $zipFound = Get-ChildItem "$env:USERPROFILE\Downloads" -File |
                 Where-Object Name -like "*$packageId*" |  Select-Object -First 1
             if (-not $zipFound) {
@@ -159,8 +160,26 @@ function installPackageZip {
                 Where-Object Name -like "*$packageId*" |  Select-Object -First 1
             if ($zipFound) {
                 Write-Host "Installing $packageId..."
-                if ($name -eq "avrdude") {
-                    Expand-Archive -Path $zipFound -DestinationPath "$workspace_path/$packageId" -Force
+                if ($extension -eq ".zip") {
+                    if ($name -eq "avrdude"){
+                        Expand-Archive -Path $zipFound -DestinationPath "$workspace_path/$packageId" -Force
+                    }
+                    else {
+                        Expand-Archive -Path $zipFound -DestinationPath "$workspace_path" -Force
+                        if ($name -eq "stlink") {
+                            Start-Process powershell.exe `
+                                -Verb RunAs `
+                                -Wait `
+                                -ArgumentList @(
+                                    '-NoProfile'
+                                    '-Command'
+                                    "Copy-Item -Path '$workspace_path\$packageId\Program Files (x86)\*' -Destination 'C:\Program Files (x86)' -Recurse -Force"
+                                )
+                        }
+                    }
+                }
+                else {
+                    & "C:\Program Files\7-Zip\7z.exe" x $zipFound.FullName -o"$workspace_path/$packageId" -y
                 }
             }
             else {
@@ -395,7 +414,7 @@ $packageList = @{
     # "avr"       = { param($p) installPackageZip    $p "avr8-gnu-toolchain-win32_x86_64" $true  "https://ww1.microchip.com/downloads/aemDocuments/documents/DEV/ProductDocuments/SoftwareTools/avr8-gnu-toolchain-4.0.0.52-win32.any.x86_64.zip"}
     # "avrdude"   = { param($p) installPackageZip    $p "avrdude"                         $true  "https://github.com/avrdudes/avrdude/releases/download/v8.2/avrdude-v8.2-windows-x64.zip"}
     "ocd"       = { param($p) installPackageZip    $p "xpack-openocd-0.12.0-7"          $true  "https://github.com/xpack-dev-tools/openocd-xpack/releases/download/v0.12.0-7/xpack-openocd-0.12.0-7-win32-x64.zip" }
-    "stlink"    = { param($p) installPackageZip    $p "stlink"                          $true  "https://github.com/stlink-org/stlink/releases/download/v1.8.0/stlink-1.8.0-win32.zip" }
+    "stlink"    = { param($p) installPackageZip    $p "stlink-1.8.0-win32"              $true  "https://github.com/stlink-org/stlink/releases/download/v1.8.0/stlink-1.8.0-win32.zip" }
     "libusb"    = { param($p) installPackageZip    $p "libusb"                          $true  "https://github.com/libusb/libusb/releases/download/v1.0.30/libusb-1.0.30.7z" }
     "msp430"    = { param($p) installPackageExe    $p "msp430-gcc"                      $true  "https://dr-download.ti.com/software-development/ide-configuration-compiler-or-debugger/MD-LlCjWuAbzH/9.3.1.2/msp430-gcc-full-windows-installer-9.3.1.2.exe" }
     "xc8"       = { param($p) installPackageExe    $p "xc8"                             $true  "https://ww1.microchip.com/downloads/aemDocuments/documents/DEV/ProductDocuments/SoftwareTools/xc8-v4.00-full-install-windows-x64-installer.exe" }
