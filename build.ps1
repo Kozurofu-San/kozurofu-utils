@@ -6,6 +6,7 @@ param(
     [int] $log,
     [string] $build_system,
     [string] $programmer,
+    [string] $jlink_if,
     [string] $workspace_path,
     [string] $server
 )
@@ -49,8 +50,9 @@ function Compile {
     -DPLATFORM_DRIVER="${driver}" `
     -DCMAKE_PROJECT_NAME="${project}" `
     -DCMAKE_SYSTEM_NAME=Generic `
-    -DLOG="${log}" `
+    -DLOG="$log" `
     -DTARGET="$cpu" `
+    -DJLINK_IF="$jlink_if" `
     -DBOARD="$board"  
 }
 
@@ -177,7 +179,7 @@ if ($cpu -like "*ESP32*") { & $build_system_bin size }
 Set-Location $dir
 # idf.py size
 
-./submodules/utils/launchGenerator.ps1 $cpu $board $log $programmer $workspace_path
+./submodules/utils/launchGenerator.ps1 $cpu $board $log $programmer $jlink_if $workspace_path
 
 $end_time = Get-Date
 $executionTime =  $end_time - $start_time

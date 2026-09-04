@@ -3,6 +3,7 @@ param(
     [string] $board = "arduino-due",
     [int] $log = 1,
     [string] $programmer = "jlink",
+    [string] $jlink_if,
     [string] $workspace_path
 )
 
@@ -48,16 +49,21 @@ if ($cpu -like "STM32*" -or $cpu -like "*SAM*")
     if ($programmer -eq "jlink") {
         $arm.servertype = "jlink"
         $arm.serverpath = "`${env:JLINK_PATH}/JLinkGDBServerCL.exe"
-        $arm.interface = "jtag"
-        $arm.PSObject.Properties.Remove("swoConfig")
         $arm.name = "J-LINK"
     }
     else {
         $arm.servertype = "openocd"
         $arm.serverpath = "`${env:OCD_PATH}/bin/openocd"
-        $arm.interface = "swd"
         $arm.name = "ST-LINK"
     }
+    if ($jlink_if -eq "SWO") {
+        $arm.interface = "swd"
+    }
+    else {
+        $arm.interface = "jtag"
+        $arm.PSObject.Properties.Remove("swoConfig")
+    }
+
     $dbg = $launch.configurations | Where-Object name -eq 'Debug continue'
     $dbg.overrideLaunchCommands[0] = "monitor go"
 }
