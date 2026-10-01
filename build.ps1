@@ -1,3 +1,5 @@
+#!/usr/bin/env pwsh
+
 param(
     [string] $build,
     [string] $project,
@@ -23,19 +25,26 @@ Set-Location $PSScriptRoot
 if ($build_system -eq "ninja") {
     ./checkInstall.ps1 "ninja" $server $workspace_path
     $build_system_bin = "$env:MSYS_PATH/mingw64/bin/ninja.exe"
+    if ($IsLinux) {
+        $build_system_bin = "ninja"
+    }
     $build_system_alias = "Ninja"
 }
 elseif ($build_system -eq "make") {
     ./checkInstall.ps1 "make" $server $workspace_path
     $build_system_bin = "$env:MSYS_PATH/usr/bin/make.exe"
     $build_system_alias = "MSYS Makefiles"
+    if ($IsLinux) {
+        $build_system_bin = "make"
+        $build_system_alias = "Unix Makefiles"
+    }
 }
 
 if ($programmer -eq "jlink") {
     ./checkInstall.ps1 "jlink" $server $workspace_path
 }
 elseif ($cpu -like "STM32*" -or $cpu -like "*SAM*") {
-    ./checkInstall.ps1 "ocd" $server $workspace_path
+    ./checkInstall.ps1 "openocd" $server $workspace_path
     ./checkInstall.ps1 "libusb" $server $workspace_path
     ./checkInstall.ps1 "stlink" $server $workspace_path
 }

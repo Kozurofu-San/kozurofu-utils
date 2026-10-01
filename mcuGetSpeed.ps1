@@ -41,9 +41,15 @@ if ($cpu -like "STM32*" -or $cpu -like "*SAM*")
             $mcuLine = $matches[0].ToLower()
         }
     }
-    if ($env:OCD_PATH) {
-        if (Test-Path -Path $env:OCD_PATH) {
-            $cfg = (Get-ChildItem -Path "$env:OCD_PATH/openocd/scripts/target" -Filter "*$mcuLine*").Name;
+    if ($IsLinux) {
+        $path = "/opt/xpack-openocd-0.12.0-7/openocd/scripts/target"
+        $cfg = (Get-ChildItem -Path $path -Filter "*$mcuLine*").Name;
+    }
+    else {
+        if ($env:OCD_PATH) {
+            if (Test-Path -Path $env:OCD_PATH) {
+                $cfg = (Get-ChildItem -Path "$env:OCD_PATH/openocd/scripts/target" -Filter "*$mcuLine*").Name;
+            }
         }
     }
     return $swoFrequency, $cpuFrequency, $cfg

@@ -1,7 +1,7 @@
 param(
-    [string] $package = "stlink",
+    [string] $package = "openocd",
     [string] $server = "localhost",
-    [string] $workspace_path = "D:/tools"
+    [string] $workspace_path = "/tools"
 )
 
 if (-not $workspace_path)
@@ -9,7 +9,7 @@ if (-not $workspace_path)
     Write-Warning "workspace_path isn't set"
 }
 
-if (-not (Get-Command "winget" -ErrorAction SilentlyContinue)) {
+if ((-not (Get-Command "winget" -ErrorAction SilentlyContinue)) -and $IsWindows) {
     $progressPreference = 'silentlyContinue'
     Write-Host "Installing WinGet PowerShell module from PSGallery..."
     Install-PackageProvider -Name NuGet -Force | Out-Null
@@ -96,9 +96,6 @@ function installPackageWinget {
             }
         }
     }
-    # if ($name -eq "msys") {
-    #     & "$env:MSYS_PATH\usr\bin\pacman.exe" -Suy
-    # }
 }
 
 function installPackageMsys {
@@ -108,6 +105,7 @@ function installPackageMsys {
         [string] $packageId,
         [bool] $addPath = $true
     )
+
     if (-not (Test-Path -Path "$env:MSYS_PATH/usr/bin/pacman.exe")) {
         Write-Error "MSYS2 isn't installed"
         exit
@@ -235,32 +233,40 @@ function installPackage {
     switch ($name) {
 
         "arm" {
-            # if (-not (Get-Command "arm-none-eabi-gcc" -ErrorAction SilentlyContinue)) {
-            if ((-not $envVar) -or (-not (Get-Command "$envName/arm-none-eabi-gcc.exe" -ErrorAction SilentlyContinue))) {
-                if (-not (Get-Command "$workspace_path\$packageId\bin\arm-none-eabi-gcc.exe" -ErrorAction SilentlyContinue)) {
-                    $url = "https://gitlab.arm.com/api/v4/projects/tooling%2Fgnu-toolchains-for-arm/packages/generic/gnu-toolchain/15.3.rel1/arm-gnu-toolchain-15.3.rel1-mingw-w64-x86_64-arm-none-eabi.msi"
-                    Start-Process $url
-                    $msi = Get-ChildItem "$env:USERPROFILE\Downloads" -File |
-                        Where-Object Name -like "*$packageId*" |  Select-Object -First 1
-                    if ($msi) {
-                        $msi = $msi.FullName
-                        $workspace_path = $workspace_path.Replace("/", "\")
-                        Start-Process msiexec.exe -Wait -ArgumentList @(
-                            "/i"
-                            "`"$msi`""
-                            "INSTALLDIR=`"$workspace_path\$packageId`""
-                            "EULA=1"
-                        )
-                    }
-                    else {
-                        Write-Warning "Download $packageId from"
-                        Write-Warning "$url"
-                        Write-Warning "And retry"
-                    }
+            if ($IsLinux) {
+                $path = Get-Command $name -ErrorAction SilentlyContinue
+                if (-not $path) {
+                    sudo apt install -y gcc-arm-none-eabi binutils-arm-none-eabi gdb-multiarch
                 }
-                if ((-not $envVar) -and (Get-Command "$workspace_path\$packageId\bin\arm-none-eabi-gcc.exe" -ErrorAction SilentlyContinue)) {
-                    if (-$addPath) {
-                        addEnvironment "PATH" "$workspace_path/$packageId/bin"
+            }
+            else {
+                # if (-not (Get-Command "arm-none-eabi-gcc" -ErrorAction SilentlyContinue)) {
+                if ((-not $envVar) -or (-not (Get-Command "$envName/arm-none-eabi-gcc.exe" -ErrorAction SilentlyContinue))) {
+                    if (-not (Get-Command "$workspace_path\$packageId\bin\arm-none-eabi-gcc.exe" -ErrorAction SilentlyContinue)) {
+                        $url = "https://gitlab.arm.com/api/v4/projects/tooling%2Fgnu-toolchains-for-arm/packages/generic/gnu-toolchain/15.3.rel1/arm-gnu-toolchain-15.3.rel1-mingw-w64-x86_64-arm-none-eabi.msi"
+                        Start-Process $url
+                        $msi = Get-ChildItem "$env:USERPROFILE\Downloads" -File |
+                            Where-Object Name -like "*$packageId*" |  Select-Object -First 1
+                        if ($msi) {
+                            $msi = $msi.FullName
+                            $workspace_path = $workspace_path.Replace("/", "\")
+                            Start-Process msiexec.exe -Wait -ArgumentList @(
+                                "/i"
+                                "`"$msi`""
+                                "INSTALLDIR=`"$workspace_path\$packageId`""
+                                "EULA=1"
+                            )
+                        }
+                        else {
+                            Write-Warning "Download $packageId from"
+                            Write-Warning "$url"
+                            Write-Warning "And retry"
+                        }
+                    }
+                    if ((-not $envVar) -and (Get-Command "$workspace_path\$packageId\bin\arm-none-eabi-gcc.exe" -ErrorAction SilentlyContinue)) {
+                        if (-$addPath) {
+                            addEnvironment "PATH" "$workspace_path/$packageId/bin"
+                        }
                     }
                 }
             }
@@ -346,33 +352,34 @@ function installPackage {
         }
 
         "jlink" {
-            if ((-not $envVar) -or (-not (Get-Command "$envName/JLink.exe" -ErrorAction SilentlyContinue))) {
-                if (-not (Get-Command "$workspace_path/$packageId/JLink.exe" -ErrorAction SilentlyContinue)) {
-                    $url = "https://www.segger.com/downloads/jlink/JLink_Windows_x86_64.exe"
-                    $exe = Get-ChildItem "$env:USERPROFILE\Downloads" -File |
-                        Where-Object Name -like "*$packageId*" |  Select-Object -First 1
-                    if ($exe) {
-                        $exe = $exe.FullName
-                        $workspace_path = $workspace_path.Replace("/", "\")
-                        & $exe -InstDir="$workspace_path" -InstAllUsers=1 -UpdateExisting=1 -CreateStartMenuEntry=1 -CreateDesktopShortCut=0 -StartDLLUpdater=0 -Silent=0
+            else {
+                if ((-not $envVar) -or (-not (Get-Command "$envName/JLink.exe" -ErrorAction SilentlyContinue))) {
+                    if (-not (Get-Command "$workspace_path/$packageId/JLink.exe" -ErrorAction SilentlyContinue)) {
+                        $url = "https://www.segger.com/downloads/jlink/JLink_Windows_x86_64.exe"
+                        $exe = Get-ChildItem "$env:USERPROFILE\Downloads" -File |
+                            Where-Object Name -like "*$packageId*" |  Select-Object -First 1
+                        if ($exe) {
+                            $exe = $exe.FullName
+                            $workspace_path = $workspace_path.Replace("/", "\")
+                            & $exe -InstDir="$workspace_path" -InstAllUsers=1 -UpdateExisting=1 -CreateStartMenuEntry=1 -CreateDesktopShortCut=0 -StartDLLUpdater=0 -Silent=0
+                            if (-$addPath) {
+                                addEnvironment "$($name.ToUpper())_PATH" "$workspace_path/$packageId"
+                            }
+                        }
+                        else {
+                            Start-Process $url
+                            Write-Warning "Download $packageId from"
+                            Write-Warning "$url"
+                            Write-Warning "And retry"
+                        }
+                    }
+                    if ((-not $envVar) -and (Get-Command "$workspace_path\$packageId\JLink.exe" -ErrorAction SilentlyContinue)) {
                         if (-$addPath) {
                             addEnvironment "$($name.ToUpper())_PATH" "$workspace_path/$packageId"
                         }
                     }
-                    else {
-                        Start-Process $url
-                        Write-Warning "Download $packageId from"
-                        Write-Warning "$url"
-                        Write-Warning "And retry"
-                    }
-                }
-                if ((-not $envVar) -and (Get-Command "$workspace_path\$packageId\JLink.exe" -ErrorAction SilentlyContinue)) {
-                    if (-$addPath) {
-                        addEnvironment "$($name.ToUpper())_PATH" "$workspace_path/$packageId"
-                    }
                 }
             }
-            
         }
 
         "vcpkg" {
@@ -413,7 +420,7 @@ $packageList = @{
     "asf"       = { param($p) installPackageZip    $p "xdk-asf-3.52.0"                  $true  "https://ww1.microchip.com/downloads/en/DeviceDoc/asf-standalone-archive-3.52.0.113.zip" }
     # "avr"       = { param($p) installPackageZip    $p "avr8-gnu-toolchain-win32_x86_64" $true  "https://ww1.microchip.com/downloads/aemDocuments/documents/DEV/ProductDocuments/SoftwareTools/avr8-gnu-toolchain-4.0.0.52-win32.any.x86_64.zip"}
     # "avrdude"   = { param($p) installPackageZip    $p "avrdude"                         $true  "https://github.com/avrdudes/avrdude/releases/download/v8.2/avrdude-v8.2-windows-x64.zip"}
-    "ocd"       = { param($p) installPackageZip    $p "xpack-openocd-0.12.0-7"          $true  "https://github.com/xpack-dev-tools/openocd-xpack/releases/download/v0.12.0-7/xpack-openocd-0.12.0-7-win32-x64.zip" }
+    "openocd"   = { param($p) installPackageZip    $p "xpack-openocd-0.12.0-7"          $true  "https://github.com/xpack-dev-tools/openocd-xpack/releases/download/v0.12.0-7/xpack-openocd-0.12.0-7-win32-x64.zip" }
     "stlink"    = { param($p) installPackageZip    $p "stlink-1.8.0-win32"              $true  "https://github.com/stlink-org/stlink/releases/download/v1.8.0/stlink-1.8.0-win32.zip" }
     "libusb"    = { param($p) installPackageZip    $p "libusb"                          $true  "https://github.com/libusb/libusb/releases/download/v1.0.30/libusb-1.0.30.7z" }
     "msp430"    = { param($p) installPackageExe    $p "msp430-gcc"                      $true  "https://dr-download.ti.com/software-development/ide-configuration-compiler-or-debugger/MD-LlCjWuAbzH/9.3.1.2/msp430-gcc-full-windows-installer-9.3.1.2.exe" }
@@ -432,7 +439,68 @@ if ($PSVersionTable.PSVersion -lt [System.Version]"7.5.0") {
 }
 
 if ($packageList.ContainsKey($package)) {
-    & $packageList[$package] $package
+    if ($IsLinux) {
+        if ($package -eq "msys") { return }
+        if ($package -eq "stlink") { return }
+        if ($package -eq "jlink") {
+            if (-not (Get-Command JLinkExe -ErrorAction SilentlyContinue)) {
+                $url = "https://www.segger.com/downloads/jlink/JLink_Linux_x86_64.deb"
+                $exe = Get-ChildItem "$HOME/Downloads" -File |
+                    Where-Object Name -like "*JLink_Linux_V*_x86_64.deb*" |  Select-Object -First 1
+                if ($exe) {
+                    $exe = $exe.FullName
+                    sudo apt install -y $exe
+                }
+                else {
+                    Start-Process $url
+                    Write-Warning "Download $packageId from"
+                    Write-Warning "$url"
+                    Write-Warning "And retry"
+                }
+            }
+        }
+        elseif ($package -eq "libusb") {
+            if (-not $(dpkg -l libusb-1.0*)) {
+                sudo apt install -y libusb-1.0-0 libusb-1.0-0-dev
+            }
+        }
+        elseif ($package -eq "arm") {
+            if (-not (Get-Command arm-none-eabi-gcc -ErrorAction SilentlyContinue)) {
+                sudo apt install -y gcc-arm-none-eabi gdb-multiarch build-essential libnewlib-arm-none-eabi
+                sudo ln -s /usr/bin/gdb-multiarch /usr/bin/arm-none-eabi-gdb
+            }
+        }
+        elseif ($package -eq "avr") {
+            if (-not (Get-Command avr-gcc -ErrorAction SilentlyContinue)) {
+                sudo apt install -y gcc-avr binutils-avr avr-libc
+            }
+        }
+        elseif ($package -eq "ninja") {
+            if (-not (Get-Command ninja -ErrorAction SilentlyContinue)) {
+                sudo apt install -y ninja-build
+            }
+        }
+        elseif ($package -eq "openocd") {
+            if (-not (Get-Command openocd -ErrorAction SilentlyContinue)) {
+                Invoke-WebRequest -Uri "https://github.com/xpack-dev-tools/openocd-xpack/releases/download/v0.12.0-7/xpack-openocd-0.12.0-7-linux-x64.tar.gz" -OutFile "~/Downloads/openocd.tar.gz"
+                sudo rm -r /opt/xpack-openocd-0.12.0-7
+                sudo tar -xvf ~/Downloads/openocd.tar.gz -C /opt/
+                $target = 'export PATH="$PATH:/opt/xpack-openocd-0.12.0-7/bin"'; $file = "$HOME/.bashrc"
+                if (-not (Test-Path $file) -or $null -eq (Get-Content $file | Select-String -SimpleMatch $target)) {
+                    Add-Content $file "`n$target"
+                }
+                New-Item -Path $PROFILE -Type File -Force   # source ~/.bashrc
+            }
+        }
+        else {
+            if (-not (Get-Command $package -ErrorAction SilentlyContinue)) {
+                sudo apt install -y $package
+            }
+        }
+    }
+    else {
+        & $packageList[$package] $package
+    }
 }
 else {
     Write-Error "Wrong package name. Available packages:"

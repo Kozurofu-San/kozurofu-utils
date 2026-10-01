@@ -49,11 +49,17 @@ if ($cpu -like "STM32*" -or $cpu -like "*SAM*")
     if ($programmer -eq "jlink") {
         $arm.servertype = "jlink"
         $arm.serverpath = "`${env:JLINK_PATH}/JLinkGDBServerCL.exe"
+        if ($IsLinux) {
+            $arm.serverpath = "JLinkGDBServer"
+        }
         $arm.name = "J-LINK"
     }
     else {
         $arm.servertype = "openocd"
         $arm.serverpath = "`${env:OCD_PATH}/bin/openocd"
+        if ($IsLinux) {
+            $arm.serverpath = "openocd"
+        }
         $arm.name = "ST-LINK"
     }
     if ($jlink_if -eq "SWO") {

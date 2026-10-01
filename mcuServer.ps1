@@ -7,14 +7,17 @@ param(
 )
 
 $jlink_gdb = "${env:JLINK_PATH}/JLinkGDBServerCL.exe"
+if ($IsLinux) {
+    $jlink_gdb = "JLinkGDBServer"
+}
 if (-not (Test-Path -Path $jlink_gdb -PathType Leaf) -and ($programmer -eq "jlink"))
 {
     Write-Error "Jlink isn't installed. https://www.segger.com/downloads/jlink/"
     pause
     exit
 }
-$openocd = "${env:OCD_PATH}/bin/openocd.exe"
-if (-not (Test-Path -Path $openocd -PathType Leaf) -and ($programmer -ne "jlink"))
+$openocd = "openocd"
+if (-not (Get-Command openocd -ErrorAction SilentlyContinue) -and ($programmer -ne "jlink"))
 {
     Write-Error "OpenOCD isn't installed"
     pause
@@ -27,6 +30,9 @@ $tcl_port    = ($port + 1).ToString()
 $telnet_port = ($port + 2).ToString()
 
 $swoFrequency, $cpuFrequency, $cfg = ./mcuGetSpeed.ps1 $cpu $board $log
+
+Write-Host "CPU $cpu"
+Write-Host "Target $cfg"
 
 if ($cpu -like "STM32*" -or $cpu -like "*SAM*")
 {
@@ -82,5 +88,3 @@ elseif ($cpu -like "*MSP430*")
 {
     gdb_agent_console $env:MSP430_PATH/msp430.dat
 }
-
-pause
