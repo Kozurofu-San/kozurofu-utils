@@ -10,7 +10,7 @@ $jlink_gdb = "${env:JLINK_PATH}/JLinkGDBServerCL.exe"
 if ($IsLinux) {
     $jlink_gdb = "JLinkGDBServer"
 }
-if (-not (Test-Path -Path $jlink_gdb -PathType Leaf) -and ($programmer -eq "jlink"))
+if (-not (Get-Command $jlink_gdb -ErrorAction SilentlyContinue) -and ($programmer -eq "jlink"))
 {
     Write-Error "Jlink isn't installed. https://www.segger.com/downloads/jlink/"
     pause
